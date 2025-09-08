@@ -1,5 +1,6 @@
 use clap::{Args, Parser, Subcommand};
 use std::path::PathBuf;
+use std::path::Path;
 
 #[derive(Parser, Debug)]
 #[command(name = "par", version, about = "par-rs: session/worktree manager with per-session Docker Compose isolation")] 
@@ -57,16 +58,24 @@ fn main() -> anyhow::Result<()> {
     let cli = Cli::parse();
     match cli.command {
         Commands::Start(args) => {
-            println!(
-                "par start {} -- path={:?} branch={:?} with={:?} keep={}",
-                args.label, args.path, args.branch, args.with, args.keep
-            );
+            let repo = resolve_repo_path(args.path.as_deref())?;
+            let session = par_core::create_session(&args.label, &repo, args.branch, args.with)
+                .map_err(|e| anyhow::anyhow!("create session failed: {e}"))?;
+            println!("created session: {} (project: {})", session.label, session.compose_project);
         }
         Commands::Checkout { target, path, label } => {
             println!("par checkout {} -- path={:?} label={:?}", target, path, label);
         }
         Commands::Ls => {
-            println!("par ls (placeholder)");
+            let reg = par_core::load_registry()
+                .map_err(|e| anyhow::anyhow!("load registry failed: {e}"))?;
+            if reg.sessions.is_empty() {
+                println!("no sessions");
+            } else {
+                for s in reg.sessions {
+                    println!("{}\t{}\t{}", s.label, s.repo_path.display(), s.compose_project);
+                }
+            }
         }
         Commands::Open { label } => {
             println!("par open {} (placeholder)", label);
@@ -88,4 +97,15 @@ fn main() -> anyhow::Result<()> {
         }
     }
     Ok(())
+}
+
+fn resolve_repo_path(path: Option<&Path>) -> anyhow::Result<PathBuf> {
+    let p = match path {
+        Some(p) => p.to_path_buf(),
+        None => std::env::current_dir()?,
+    };
+    if !p.exists() {
+        anyhow::bail!("path does not exist: {}", p.display());
+    }
+    Ok(p)
 }
