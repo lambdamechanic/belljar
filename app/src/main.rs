@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use std::path::Path;
 
 #[derive(Parser, Debug)]
-#[command(name = "par", version, about = "par-rs: session/worktree manager with per-session Docker Compose isolation")] 
+#[command(name = "belljar", version, about = "belljar: session/worktree manager with per-session Docker Compose isolation")] 
 struct Cli {
     #[command(subcommand)]
     command: Commands,

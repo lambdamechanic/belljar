@@ -7,7 +7,7 @@ publish = false
 description = "Rust CLI inspired by coplane/par with per-session docker-compose isolation"
 
 [[bin]]
-name = "par"
+name = "belljar"
 path = "src/main.rs"
 
 [dependencies]
