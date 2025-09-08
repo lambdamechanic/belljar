@@ -1,23 +1,23 @@
 # Work Plan: par-rs (Rust clone of coplane/par) with per-session Docker Compose isolation
 
 ## Goals
-- Provide a Rust CLI with a similar interface to `coplane/par` for running tasks/steps in parallel.
-- Each run/session executes inside an isolated Docker Compose project (unique project name), enabling hermetic services (e.g., Postgres, Redis) per session.
+- Provide a Rust CLI with a similar interface to `coplane/par` for managing development sessions/worktrees and multi-repo workspaces.
+- Each session/workspace runs in an isolated Docker Compose project (unique project name), enabling hermetic services (e.g., Postgres, Redis) per session.
 - Clean lifecycle: provision -> run -> collect logs/artifacts -> teardown.
 - Solid developer ergonomics: clear logs, good errors, cross-platform (Linux/macOS, Docker Desktop).
 
 ## High-Level Architecture
 - Workspace layout:
-  - `app/` — CLI crate (binary) mirroring `par` UX.
-  - `core/` — library crate for configs, orchestration, runners, docker-compose integration.
+  - `app/` — CLI crate (binary) mirroring `par` UX (start, checkout, ls, open, rm, send, control-center, workspace subcommands).
+  - `core/` — library crate for repo/worktree management, tmux control, and docker-compose integration.
   - `tests/` — integration/e2e tests spanning the workspace (Rust integration tests; optional Docker-gated tests).
 - Session isolation via `docker compose -p <unique_session>` to namespace networks, volumes, and containers.
 - Config-driven services using compose templates; CLI flags/env to select stacks (e.g., `--with postgres,redis`).
 
 ## Phase 0 — Recon and Spec
 1. Review `coplane/par` repository to enumerate:
-   - CLI commands, flags, and config files it supports.
-   - Core semantics: task graph, parallelism, retries, env injection, artifacts.
+   - CLI commands, flags, and config it supports (sessions/workspaces).
+   - Core semantics: session labels, global registry, worktree/branch ergonomics, tmux integration.
    - Typical workflows and examples to mirror.
 2. Draft a minimal feature spec and parity table (par -> par-rs), flag deltas.
 
@@ -27,19 +27,18 @@ Deliverables:
 ## Phase 1 — Scaffolding
 1. Initialize Rust workspace (`Cargo.toml` with members `app`, `core`).
 2. Create crates:
-   - `core/` (lib): config types, session manager, compose driver, task runner traits.
-   - `app/` (bin): clap-powered CLI, subcommands, config loading, drives `core`.
+   - `core/` (lib): repo/worktree ops, session registry, tmux + compose drivers.
+   - `app/` (bin): clap-powered CLI, subcommands matching `par`, drives `core`.
 3. Establish `tests/` for integration tests; add a `docker` feature gate to enable Docker tests.
 
 Deliverables:
 - Compiling workspace with `--help` showing CLI skeleton.
 
-## Phase 2 — Config + CLI UX
-1. Define config schema (YAML/TOML) close to `par` (tasks, env, matrix, includes).
-2. Implement CLI:
-   - `par-rs run` (default): executes tasks defined in config.
-   - Global flags: `--config`, `--var KEY=VAL`, `--parallel N`, `--retry`, `--with <services>`, `--keep`.
-3. Environment & variable resolution order (env, file, CLI) with clear precedence.
+## Phase 2 — CLI UX + Core APIs
+1. Implement CLI surface with subcommands:
+   - `start`, `checkout`, `ls`, `open`, `rm`, `send`, `control-center`, `workspace <...>`.
+2. Define session model: label, repo path, branch, worktree path, compose project, selected services.
+3. Establish a registry (on-disk DB under `~/.local/share/par-rs`) to track sessions/workspaces.
 
 Deliverables:
 - Parsing, validation errors, and a sample config under `examples/`.
@@ -50,21 +49,16 @@ Deliverables:
    - Render compose file(s) from templates (services selected via CLI/config).
    - Bring up with healthchecks; stream logs on demand.
    - Inject env/ports/volumes per session.
-2. Lifecycle API: `provision()`, `exec(task)`, `teardown()`, with `--keep` to skip teardown and `--reuse <session>` for debugging.
+2. Lifecycle API: `provision()`, `exec(cmd)`, `teardown()`, with `--keep` to skip teardown and `--reuse <session>` for debugging.
 3. Cross-platform nuances (Docker Desktop/macOS) and TTY handling.
 
 Deliverables:
 - Working isolated services (e.g., Postgres/Redis) per run with `-p <session>`.
 
-## Phase 4 — Task Runner
-1. Implement task graph (DAG) with dependencies, concurrency limits, and retries.
-2. Execution modes:
-   - Host execution (default) and container execution (targeted service) via `docker compose exec`.
-   - Log capture and per-task status (success/fail/timeout).
-3. Cancellations and graceful shutdown (Ctrl-C) with cleanup.
-
-Deliverables:
-- Deterministic execution order with parallelism, exit codes, and summaries.
+## Phase 4 — Repo, Worktree, and Tmux
+1. Implement `start` to create a worktree and branch, initialize session registry, and launch tmux session.
+2. Implement `checkout` to attach to existing branches/PRs per par behavior.
+3. Implement `open`, `send`, and `control-center` with tmux control and helpful UX.
 
 ## Phase 5 — Testing and CI
 1. Unit tests for parsing, graph topology, and CLI arg merging.
@@ -96,7 +90,7 @@ Deliverables:
 M1: Workspace + CLI skeleton + spec
 M2: Config parsing + basic run
 M3: Per-session compose up/down with Postgres
-M4: DAG runner with parallelism + retries
+M4: Repo/worktree + tmux integration
 M5: Integration tests + CI
 M6: Docs + examples + 0.1 release
 
@@ -104,4 +98,3 @@ M6: Docs + examples + 0.1 release
 - Exact parity surface from `coplane/par` (commands/flags that are must-have for MVP).
 - Whether to support remote Docker contexts in MVP.
 - Windows support scope.
-
