@@ -1,7 +1,7 @@
 # Repository Guidelines
 
 ## Project Structure & Module Organization
-- `app/` — CLI binary crate (par-like UX).
+- `app/` — CLI binary crate (belljar, par-like UX).
 - `core/` — library crate (config, session, compose, runner).
 - `tests/` — integration tests spanning the workspace.
 - `docs/` — specs and usage docs (e.g., `docs/spec.md`).
@@ -9,8 +9,9 @@
 - `examples/` — sample configs and stacks.
 
 ## Build, Test, and Development Commands
-- Build: `cargo build` (workspace) or `cargo build -p app`.
-- Run CLI: `cargo run -p app -- --help` or `cargo run -p app -- run`.
+- Build: `cargo build` (workspace) or `cargo build -p par-cli`.
+- Run CLI help: `cargo run -p par-cli -- --help`.
+- Start a session: `cargo run -p par-cli -- start demo --path . --with postgres`.
 - Tests (unit + integration): `cargo test`.
 - Docker-gated tests: `DOCKER_TESTS=1 cargo test` (requires Docker + Compose v2).
 - Lint: `cargo clippy --all-targets --all-features -D warnings`.

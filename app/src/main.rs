@@ -61,7 +61,22 @@ fn main() -> anyhow::Result<()> {
             let repo = resolve_repo_path(args.path.as_deref())?;
             let session = par_core::create_session(&args.label, &repo, args.branch, args.with)
                 .map_err(|e| anyhow::anyhow!("create session failed: {e}"))?;
-            println!("created session: {} (project: {})", session.label, session.compose_project);
+            if !session.services.is_empty() {
+                match par_core::compose::up(&session) {
+                    Ok(()) => {
+                        println!(
+                            "created session: {} (project: {}) [services up]",
+                            session.label, session.compose_project
+                        );
+                    }
+                    Err(e) => {
+                        eprintln!("warning: compose up failed: {e}");
+                        println!("created session: {} (project: {})", session.label, session.compose_project);
+                    }
+                }
+            } else {
+                println!("created session: {} (project: {})", session.label, session.compose_project);
+            }
         }
         Commands::Checkout { target, path, label } => {
             println!("par checkout {} -- path={:?} label={:?}", target, path, label);
@@ -81,7 +96,26 @@ fn main() -> anyhow::Result<()> {
             println!("par open {} (placeholder)", label);
         }
         Commands::Rm { target } => {
-            println!("par rm {} (placeholder)", target);
+            if target == "all" {
+                let reg = par_core::load_registry()
+                    .map_err(|e| anyhow::anyhow!("load registry failed: {e}"))?;
+                for s in reg.sessions {
+                    let _ = par_core::compose::down(&s);
+                    let _ = par_core::remove_session(&s.label);
+                    println!("removed {}", s.label);
+                }
+            } else {
+                if let Some(s) = par_core::find_session(&target)
+                    .map_err(|e| anyhow::anyhow!("find session failed: {e}"))?
+                {
+                    let _ = par_core::compose::down(&s);
+                    par_core::remove_session(&target)
+                        .map_err(|e| anyhow::anyhow!("remove failed: {e}"))?;
+                    println!("removed {}", s.label);
+                } else {
+                    println!("no such session: {}", target);
+                }
+            }
         }
         Commands::Send { target, command } => {
             println!("par send {} {:?} (placeholder)", target, command);

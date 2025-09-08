@@ -1,18 +1,18 @@
-# par-rs Spec and Parity Map
+# belljar Spec and Parity Map
 
 ## Scope and Goals
 - Rust clone of coplane/par focused on managing development sessions and workspaces.
 - Addition: each session/workspace provisions an isolated Docker Compose project for hermetic services.
 
-## CLI Surface (Parity with par)
-- `par start <label> [--path <repo>] [--branch <name>] [--with <svc,svc>] [--keep]`
-- `par checkout <target> [--path <repo>] [--label <label>]`
-- `par ls`
-- `par open <label>`
-- `par rm <label|all>`
-- `par send <label|all> <command...>`
-- `par control-center`
-- `par workspace <subcmd>` where subcmds include:
+## CLI Surface (Parity with par; use `belljar` in place of `par`)
+- `belljar start <label> [--path <repo>] [--branch <name>] [--with <svc,svc>] [--keep]`
+- `belljar checkout <target> [--path <repo>] [--label <label>]`
+- `belljar ls`
+- `belljar open <label>`
+- `belljar rm <label|all>`
+- `belljar send <label|all> <command...>`
+- `belljar control-center`
+- `belljar workspace <subcmd>` where subcmds include:
   - `start <label> [--path <root>] [--repos r1,r2] [--open]`
   - `code <label>` | `open <label>` | `rm <label>` | `ls`
 

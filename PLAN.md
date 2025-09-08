@@ -1,7 +1,7 @@
-# Work Plan: par-rs (Rust clone of coplane/par) with per-session Docker Compose isolation
+# Work Plan: belljar (Rust clone of coplane/par) with per-session Docker Compose isolation
 
 ## Goals
-- Provide a Rust CLI with a similar interface to `coplane/par` for managing development sessions/worktrees and multi-repo workspaces.
+- Provide a Rust CLI (belljar) with a similar interface to `coplane/par` for managing development sessions/worktrees and multi-repo workspaces.
 - Each session/workspace runs in an isolated Docker Compose project (unique project name), enabling hermetic services (e.g., Postgres, Redis) per session.
 - Clean lifecycle: provision -> run -> collect logs/artifacts -> teardown.
 - Solid developer ergonomics: clear logs, good errors, cross-platform (Linux/macOS, Docker Desktop).
