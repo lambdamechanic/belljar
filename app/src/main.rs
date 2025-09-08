@@ -46,12 +46,6 @@ struct StartArgs {
     /// Branch name to create/checkout
     #[arg(long)]
     branch: Option<String>,
-    /// Comma-separated services to include (e.g., postgres,redis)
-    #[arg(long, value_delimiter = ',')]
-    with: Vec<String>,
-    /// Keep the docker-compose stack running after completion
-    #[arg(long)]
-    keep: bool,
 }
 
 fn main() -> anyhow::Result<()> {
@@ -59,23 +53,25 @@ fn main() -> anyhow::Result<()> {
     match cli.command {
         Commands::Start(args) => {
             let repo = resolve_repo_path(args.path.as_deref())?;
-            let session = par_core::create_session(&args.label, &repo, args.branch, args.with)
+            let session = par_core::create_session(&args.label, &repo, args.branch, vec![])
                 .map_err(|e| anyhow::anyhow!("create session failed: {e}"))?;
-            if !session.services.is_empty() {
-                match par_core::compose::up(&session) {
-                    Ok(()) => {
-                        println!(
-                            "created session: {} (project: {}) [services up]",
-                            session.label, session.compose_project
-                        );
-                    }
-                    Err(e) => {
-                        eprintln!("warning: compose up failed: {e}");
-                        println!("created session: {} (project: {})", session.label, session.compose_project);
-                    }
+            match par_core::compose::up(&session) {
+                Ok(()) => {
+                    println!(
+                        "created session: {} (project: {}) [compose up]",
+                        session.label, session.compose_project
+                    );
                 }
-            } else {
-                println!("created session: {} (project: {})", session.label, session.compose_project);
+                Err(par_core::CoreError::NoComposeFiles) => {
+                    println!(
+                        "created session: {} (project: {}); no compose files found, skipping",
+                        session.label, session.compose_project
+                    );
+                }
+                Err(e) => {
+                    eprintln!("warning: compose up failed: {e}");
+                    println!("created session: {} (project: {})", session.label, session.compose_project);
+                }
             }
         }
         Commands::Checkout { target, path, label } => {
@@ -100,7 +96,10 @@ fn main() -> anyhow::Result<()> {
                 let reg = par_core::load_registry()
                     .map_err(|e| anyhow::anyhow!("load registry failed: {e}"))?;
                 for s in reg.sessions {
-                    let _ = par_core::compose::down(&s);
+                    match par_core::compose::down(&s) {
+                        Ok(()) | Err(par_core::CoreError::NoComposeFiles) => {}
+                        Err(e) => eprintln!("warning: compose down failed for {}: {e}", s.label),
+                    }
                     let _ = par_core::remove_session(&s.label);
                     println!("removed {}", s.label);
                 }
@@ -108,7 +107,10 @@ fn main() -> anyhow::Result<()> {
                 if let Some(s) = par_core::find_session(&target)
                     .map_err(|e| anyhow::anyhow!("find session failed: {e}"))?
                 {
-                    let _ = par_core::compose::down(&s);
+                    match par_core::compose::down(&s) {
+                        Ok(()) | Err(par_core::CoreError::NoComposeFiles) => {}
+                        Err(e) => eprintln!("warning: compose down failed for {}: {e}", s.label),
+                    }
                     par_core::remove_session(&target)
                         .map_err(|e| anyhow::anyhow!("remove failed: {e}"))?;
                     println!("removed {}", s.label);

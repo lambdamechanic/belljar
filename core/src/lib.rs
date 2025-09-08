@@ -26,6 +26,8 @@ pub enum CoreError {
     NoRegistryPath,
     #[error("compose error: {0}")]
     Compose(String),
+    #[error("no compose files found in repository")]
+    NoComposeFiles,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -124,84 +126,53 @@ pub fn find_session(label_or_id: &str) -> Result<Option<Session>, CoreError> {
 pub mod compose {
     use super::{data_dir, CoreError, Session};
     use std::fs;
-    use std::io::Write;
-    use std::path::PathBuf;
+    use std::path::{Path, PathBuf};
     use std::process::Command;
 
-    const BASE_YML: &str = r#"version: '3.9'
-services: {}
-"#;
+    fn discover_files(repo_path: &Path) -> Result<Vec<PathBuf>, CoreError> {
+        let mut files: Vec<PathBuf> = Vec::new();
 
-    const POSTGRES_YML: &str = r#"services:
-  postgres:
-    image: postgres:16
-    environment:
-      POSTGRES_PASSWORD: password
-      POSTGRES_USER: postgres
-      POSTGRES_DB: app
-    ports:
-      - "5432"
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-"#;
-
-    const REDIS_YML: &str = r#"services:
-  redis:
-    image: redis:7
-    ports:
-      - "6379"
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-"#;
-
-    pub struct ComposeFiles {
-        pub dir: PathBuf,
-        pub files: Vec<PathBuf>,
-    }
-
-    pub fn session_compose_dir(session: &Session) -> Result<PathBuf, CoreError> {
-        let dir = data_dir()?.join("sessions").join(&session.id).join("compose");
-        fs::create_dir_all(&dir)?;
-        Ok(dir)
-    }
-
-    pub fn write_files(session: &Session) -> Result<ComposeFiles, CoreError> {
-        let dir = session_compose_dir(session)?;
-        let mut files = Vec::new();
-
-        let base = dir.join("base.yml");
-        fs::write(&base, BASE_YML)?;
-        files.push(base);
-
-        for svc in &session.services {
-            let (name, contents) = match svc.as_str() {
-                "postgres" => ("postgres.yml", POSTGRES_YML),
-                "redis" => ("redis.yml", REDIS_YML),
-                other => {
-                    let mut f = fs::File::create(dir.join(format!("{}.yml", other)))?;
-                    f.write_all(b"services: {}\n")?;
-                    files.push(dir.join(format!("{}.yml", other)));
-                    continue;
-                }
-            };
-            let path = dir.join(name);
-            fs::write(&path, contents)?;
-            files.push(path);
+        // Prefer per-repo belljar-specific directory if present
+        let bj_dir = repo_path.join(".belljar").join("compose");
+        if bj_dir.is_dir() {
+            let mut entries: Vec<PathBuf> = fs::read_dir(&bj_dir)?
+                .filter_map(|e| e.ok().map(|e| e.path()))
+                .filter(|p| {
+                    if let Some(ext) = p.extension() {
+                        ext == "yml" || ext == "yaml"
+                    } else {
+                        false
+                    }
+                })
+                .collect();
+            entries.sort();
+            files.extend(entries);
         }
-        Ok(ComposeFiles { dir, files })
+
+        // Fallback to common compose filenames in repo root
+        for name in [
+            "docker-compose.yml",
+            "docker-compose.yaml",
+            "compose.yml",
+            "compose.yaml",
+        ] {
+            let p = repo_path.join(name);
+            if p.exists() {
+                files.push(p);
+            }
+        }
+
+        Ok(files)
     }
 
     pub fn up(session: &Session) -> Result<(), CoreError> {
-        let cf = write_files(session)?;
+        let files = discover_files(&session.repo_path)?;
+        if files.is_empty() {
+            return Err(CoreError::NoComposeFiles);
+        }
         let mut cmd = Command::new("docker");
         cmd.arg("compose").arg("-p").arg(&session.compose_project);
-        for f in &cf.files {
+        for f in &files {
             cmd.arg("-f").arg(f);
         }
         cmd.arg("up").arg("-d");
@@ -216,16 +187,14 @@ services: {}
     }
 
     pub fn down(session: &Session) -> Result<(), CoreError> {
-        let cf_dir = session_compose_dir(session)?;
-        // Reconstruct file list: base + known service files if present
+        let files = discover_files(&session.repo_path)?;
         let mut cmd = Command::new("docker");
         cmd.arg("compose").arg("-p").arg(&session.compose_project);
-        let candidates = ["base.yml", "postgres.yml", "redis.yml"];
-        for c in candidates {
-            let p = cf_dir.join(c);
-            if p.exists() {
-                cmd.arg("-f").arg(p);
-            }
+        if files.is_empty() {
+            return Err(CoreError::NoComposeFiles);
+        }
+        for p in files {
+            cmd.arg("-f").arg(p);
         }
         cmd.arg("down").arg("-v");
         let status = cmd.status().map_err(|e| CoreError::Compose(e.to_string()))?;

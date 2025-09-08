@@ -12,7 +12,7 @@
   - `core/` — library crate for repo/worktree management, tmux control, and docker-compose integration.
   - `tests/` — integration/e2e tests spanning the workspace (Rust integration tests; optional Docker-gated tests).
 - Session isolation via `docker compose -p <unique_session>` to namespace networks, volumes, and containers.
-- Config-driven services using compose templates; CLI flags/env to select stacks (e.g., `--with postgres,redis`).
+- Config-driven services come from the target repository's compose files. belljar discovers `.belljar/compose/*.yml` or `docker-compose.yml|yaml`/`compose.yml|yaml` in the repo; no built-in templates.
 
 ## Phase 0 — Recon and Spec
 1. Review `coplane/par` repository to enumerate:

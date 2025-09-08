@@ -11,7 +11,7 @@
 ## Build, Test, and Development Commands
 - Build: `cargo build` (workspace) or `cargo build -p par-cli`.
 - Run CLI help: `cargo run -p par-cli -- --help`.
-- Start a session: `cargo run -p par-cli -- start demo --path . --with postgres`.
+- Start a session: `cargo run -p par-cli -- start demo --path .` (belljar will provision compose if it finds `.belljar/compose/*.yml` or `docker-compose.yml|yaml`).
 - Tests (unit + integration): `cargo test`.
 - Docker-gated tests: `DOCKER_TESTS=1 cargo test` (requires Docker + Compose v2).
 - Lint: `cargo clippy --all-targets --all-features -D warnings`.

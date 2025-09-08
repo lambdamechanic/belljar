@@ -18,7 +18,10 @@
 
 Notes
 - We will initially implement sessions: `start`, `ls`, `open`, `rm` and `send` with minimal functionality, then add `checkout`, `control-center`, and `workspace`.
-- Compose selection via `--with postgres,redis` to include services; default stack is minimal.
+- Compose files are defined in the target repository, not built into belljar. Discovery order:
+  1) `.belljar/compose/*.yml|yaml` in the repo
+  2) `docker-compose.yml|yaml` or `compose.yml|yaml` in the repo root
+  belljar will `docker compose -p <project> -f <...> up -d` when present.
 
 ## Session Model
 - label: globally unique string.
@@ -33,14 +36,14 @@ Notes
 - Registry at `~/.local/share/par-rs/registry.json` (or platform-appropriate dir) tracks sessions and workspaces.
 
 ## Compose Isolation
-- Project-scoped: `docker compose -p <project> -f <base.yml> [-f overrides...] up -d`.
-- Templates live under `assets/compose/`. Selected via `--with`, rendered via environment variables.
-- `par send` may run inside a service container via `docker compose exec <svc> <cmd>` (future).
+- Project-scoped: `docker compose -p <project> [-f files...] up -d`. Files come from the repo as described above.
+- No built-in service templates. Users check in Dockerfiles/compose snippets in their repo.
+- `belljar send` may run inside a service container via `docker compose exec <svc> <cmd>` (future).
 
 ## MVP
 - Commands: `start`, `ls`, `open`, `rm`, `send` (host exec), `version`.
 - Registry + compose up/down + tmux session creation.
-- Basic Postgres service template.
+- Compose discovery from repo; no built-in service templates.
 
 ## Out of Scope (initially)
 - Windows support.
