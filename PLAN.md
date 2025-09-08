@@ -93,6 +93,7 @@ M3: Per-session compose up/down with Postgres
 M4: Repo/worktree + tmux integration
 M5: Integration tests + CI
 M6: Docs + examples + 0.1 release
+M7: Dogfood par-rs to develop itself (use par-rs sessions/workspaces to work on this repo; run isolated compose stacks during development)
 
 ## Open Questions / To Validate
 - Exact parity surface from `coplane/par` (commands/flags that are must-have for MVP).
