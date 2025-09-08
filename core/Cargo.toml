@@ -13,3 +13,4 @@ thiserror = "1.0"
 directories = "5.0"
 uuid = { version = "1.8", features = ["v4"] }
 time = { version = "0.3", features = ["formatting", "macros"] }
+which = "6.0"

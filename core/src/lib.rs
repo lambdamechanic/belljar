@@ -28,6 +28,10 @@ pub enum CoreError {
     Compose(String),
     #[error("no compose files found in repository")]
     NoComposeFiles,
+    #[error("tmux not found in PATH")]
+    TmuxNotFound,
+    #[error("tmux error: {0}")]
+    Tmux(String),
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -203,6 +207,76 @@ pub mod compose {
                 "docker compose down failed with status {}",
                 status
             )));
+        }
+        Ok(())
+    }
+}
+
+pub mod tmux {
+    use super::{CoreError, Session};
+    use std::path::Path;
+    use std::process::Command;
+    use which::which;
+
+    fn tmux_bin() -> Result<String, CoreError> {
+        which("tmux")
+            .map(|p| p.to_string_lossy().into_owned())
+            .map_err(|_| CoreError::TmuxNotFound)
+    }
+
+    pub fn has_session(name: &str) -> Result<bool, CoreError> {
+        let tmux = tmux_bin()?;
+        let status = Command::new(tmux)
+            .args(["has-session", "-t", name])
+            .status()
+            .map_err(|e| CoreError::Tmux(e.to_string()))?;
+        Ok(status.success())
+    }
+
+    pub fn new_detached(name: &str, cwd: &Path) -> Result<(), CoreError> {
+        let tmux = tmux_bin()?;
+        let status = Command::new(tmux)
+            .args(["new-session", "-d", "-s", name, "-c"])
+            .arg(cwd)
+            .status()
+            .map_err(|e| CoreError::Tmux(e.to_string()))?;
+        if !status.success() {
+            return Err(CoreError::Tmux("failed to create session".into()));
+        }
+        Ok(())
+    }
+
+    pub fn attach(name: &str) -> Result<(), CoreError> {
+        let tmux = tmux_bin()?;
+        let status = Command::new(tmux)
+            .args(["attach-session", "-t", name])
+            .status()
+            .map_err(|e| CoreError::Tmux(e.to_string()))?;
+        if !status.success() {
+            return Err(CoreError::Tmux("failed to attach".into()));
+        }
+        Ok(())
+    }
+
+    pub fn ensure_session(session: &Session) -> Result<(), CoreError> {
+        if !has_session(&session.tmux_session)? {
+            new_detached(&session.tmux_session, &session.repo_path)?;
+        }
+        Ok(())
+    }
+
+    pub fn send_keys(name: &str, command: &str) -> Result<(), CoreError> {
+        let tmux = tmux_bin()?;
+        let status = Command::new(tmux)
+            .arg("send-keys")
+            .arg("-t")
+            .arg(name)
+            .arg(command)
+            .arg("C-m")
+            .status()
+            .map_err(|e| CoreError::Tmux(e.to_string()))?;
+        if !status.success() {
+            return Err(CoreError::Tmux("failed to send keys".into()));
         }
         Ok(())
     }

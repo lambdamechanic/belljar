@@ -89,7 +89,34 @@ fn main() -> anyhow::Result<()> {
             }
         }
         Commands::Open { label } => {
-            println!("par open {} (placeholder)", label);
+            match par_core::find_session(&label) {
+                Ok(Some(s)) => {
+                    match par_core::tmux::ensure_session(&s) {
+                        Ok(()) => {
+                            // Try to attach. If tmux not found, provide guidance.
+                            match par_core::tmux::attach(&s.tmux_session) {
+                                Ok(()) => {}
+                                Err(par_core::CoreError::TmuxNotFound) => {
+                                    println!(
+                                        "tmux not found; cd {} to work in this session",
+                                        s.repo_path.display()
+                                    );
+                                }
+                                Err(e) => eprintln!("failed to attach: {e}"),
+                            }
+                        }
+                        Err(par_core::CoreError::TmuxNotFound) => {
+                            println!(
+                                "tmux not found; cd {} to work in this session",
+                                s.repo_path.display()
+                            );
+                        }
+                        Err(e) => eprintln!("failed to open session: {e}"),
+                    }
+                }
+                Ok(None) => println!("no such session: {}", label),
+                Err(e) => eprintln!("failed to load registry: {e}"),
+            }
         }
         Commands::Rm { target } => {
             if target == "all" {
@@ -120,7 +147,39 @@ fn main() -> anyhow::Result<()> {
             }
         }
         Commands::Send { target, command } => {
-            println!("par send {} {:?} (placeholder)", target, command);
+            let cmd = command.join(" ");
+            if target == "all" {
+                match par_core::load_registry() {
+                    Ok(reg) => {
+                        for s in reg.sessions {
+                            match par_core::tmux::ensure_session(&s) {
+                                Ok(()) => {
+                                    if let Err(e) = par_core::tmux::send_keys(&s.tmux_session, &cmd) {
+                                        eprintln!("send to {} failed: {e}", s.label);
+                                    }
+                                }
+                                Err(e) => eprintln!("ensure session {} failed: {e}", s.label),
+                            }
+                        }
+                    }
+                    Err(e) => eprintln!("failed to load registry: {e}"),
+                }
+            } else {
+                match par_core::find_session(&target) {
+                    Ok(Some(s)) => {
+                        match par_core::tmux::ensure_session(&s) {
+                            Ok(()) => {
+                                if let Err(e) = par_core::tmux::send_keys(&s.tmux_session, &cmd) {
+                                    eprintln!("send failed: {e}");
+                                }
+                            }
+                            Err(e) => eprintln!("ensure session failed: {e}"),
+                        }
+                    }
+                    Ok(None) => println!("no such session: {}", target),
+                    Err(e) => eprintln!("failed to load registry: {e}"),
+                }
+            }
         }
         Commands::ControlCenter => {
             println!("par control-center (placeholder)");
