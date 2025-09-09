@@ -58,7 +58,7 @@ Deliverables:
 1. Implement `start` to create a worktree and branch, initialize session registry, and launch tmux session.
    - tmux `open` and `send` implemented; worktree/branch creation pending.
 2. Implement `checkout` to attach to existing branches (branch name only for MVP). [DONE]
-3. Implement `control-center` with tmux panes/windows. [PENDING]
+3. Implement `control-center` with tmux panes/windows. [DONE — basic tmux session with per-session windows]
 
 ## Phase 5 — Testing and CI — [PENDING]
 1. Unit tests for parsing, graph topology, and CLI arg merging.

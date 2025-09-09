@@ -351,4 +351,36 @@ pub mod tmux {
         }
         Ok(())
     }
+
+    pub fn ensure_named_session(name: &str, cwd: &Path) -> Result<(), CoreError> {
+        if !has_session(name)? {
+            new_detached(name, cwd)?;
+        }
+        Ok(())
+    }
+
+    pub fn new_window(session_name: &str, window_name: &str, cwd: &Path) -> Result<(), CoreError> {
+        let tmux = tmux_bin()?;
+        let status = Command::new(tmux)
+            .args(["new-window", "-t", session_name, "-n", window_name, "-c"])
+            .arg(cwd)
+            .status()
+            .map_err(|e| CoreError::Tmux(e.to_string()))?;
+        if !status.success() {
+            return Err(CoreError::Tmux("failed to create window".into()));
+        }
+        Ok(())
+    }
+
+    pub fn select_layout(session_name: &str, layout: &str) -> Result<(), CoreError> {
+        let tmux = tmux_bin()?;
+        let status = Command::new(tmux)
+            .args(["select-layout", "-t", session_name, layout])
+            .status()
+            .map_err(|e| CoreError::Tmux(e.to_string()))?;
+        if !status.success() {
+            return Err(CoreError::Tmux("failed to select layout".into()));
+        }
+        Ok(())
+    }
 }

@@ -214,7 +214,39 @@ fn main() -> anyhow::Result<()> {
             }
         }
         Commands::ControlCenter => {
-            println!("par control-center (placeholder)");
+            // Create a tmux session named "belljar-cc" with one window per session
+            let cc_name = "belljar-cc";
+            match par_core::load_registry() {
+                Ok(reg) => {
+                    if reg.sessions.is_empty() {
+                        println!("no sessions to show");
+                    } else {
+                        // Use the first session's repo as the base cwd
+                        let base = &reg.sessions[0].repo_path;
+                        match par_core::tmux::ensure_named_session(cc_name, base) {
+                            Ok(()) => {
+                                for s in reg.sessions {
+                                    // Try to create a window per session label
+                                    if let Err(e) = par_core::tmux::new_window(cc_name, &s.label, &s.repo_path) {
+                                        eprintln!("failed to create window for {}: {e}", s.label);
+                                    }
+                                }
+                                // Optional: choose a tiled layout
+                                let _ = par_core::tmux::select_layout(cc_name, "tiled");
+                                // Attach to control center
+                                if let Err(e) = par_core::tmux::attach(cc_name) {
+                                    eprintln!("failed to attach control center: {e}");
+                                }
+                            }
+                            Err(par_core::CoreError::TmuxNotFound) => {
+                                println!("tmux not found; control-center requires tmux");
+                            }
+                            Err(e) => eprintln!("failed to init control center: {e}"),
+                        }
+                    }
+                }
+                Err(e) => eprintln!("failed to load registry: {e}"),
+            }
         }
         Commands::Workspace { subcommand } => {
             println!("par workspace {:?} (placeholder)", subcommand);
