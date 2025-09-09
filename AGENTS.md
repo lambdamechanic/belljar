@@ -14,7 +14,7 @@
 - Start a session: `cargo run -p par-cli -- start demo --path .` (belljar will provision compose if it finds `.belljar/compose/*.yml` or `docker-compose.yml|yaml`).
 - Tests (unit + integration): `cargo test`.
 - Docker-gated tests: `DOCKER_TESTS=1 cargo test` (requires Docker + Compose v2).
-- Lint: `cargo clippy --all-targets --all-features -D warnings`.
+- Lint: `cargo clippy --all-targets --all-features -- -D warnings`.
 - Format: `cargo fmt --all`.
 
 ## Coding Style & Naming Conventions
