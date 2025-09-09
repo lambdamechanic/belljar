@@ -13,4 +13,5 @@ cargo llvm-cov --workspace --all-features --fail-under-lines 0 --text --ignore-f
 echo "Writing lcov report to target/llvm-cov/lcov.info..." >&2
 mkdir -p target/llvm-cov
 cargo llvm-cov --workspace --all-features --lcov --output-path target/llvm-cov/lcov.info --ignore-filename-regex '(.*/tests/|.*/examples/)' >/dev/null
-echo "Done. See text summary above; lcov at target/llvm-cov/lcov.info" >&2
+awk -F: '/^LF:/{lf+=$2} /^LH:/{lh+=$2} END{ if(lf>0){ printf "Total coverage: %.1f%% (%d/%d)\n", 100*lh/lf, lh, lf } else { print "Total coverage: n/a" } }' target/llvm-cov/lcov.info
+echo "Done. See lcov at target/llvm-cov/lcov.info" >&2

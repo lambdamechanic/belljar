@@ -16,16 +16,19 @@ proptest! {
         let repo = repo_root.path();
         std::fs::create_dir_all(repo).unwrap();
 
-        // create sessions
+        // create sessions (skip duplicates to respect global uniqueness)
+        use std::collections::HashSet;
+        let mut seen = HashSet::new();
         for (i, label) in labels.iter().enumerate() {
-            let branch = if i % 2 == 0 { Some(format!("feat_{}", i)) } else { None };
-            let s = par_core::create_session(label, repo, branch, vec![]).expect("create session");
-            assert_eq!(&s.label, label);
+            if seen.insert(label.clone()) {
+                let branch = if i % 2 == 0 { Some(format!("feat_{}", i)) } else { None };
+                let s = par_core::create_session(label, repo, branch, vec![]).expect("create session");
+                assert_eq!(&s.label, label);
+            }
         }
 
         let reg = par_core::load_registry().expect("load");
         // uniqueness of labels in property is not guaranteed; dedup the input
-        use std::collections::HashSet;
         let set: HashSet<_> = labels.iter().cloned().collect();
         assert_eq!(reg.sessions.len(), set.len());
 
@@ -40,4 +43,3 @@ proptest! {
         }
     }
 }
-

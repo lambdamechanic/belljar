@@ -57,6 +57,13 @@ pub struct Registry {
 static DATA_DIR_OVERRIDE: Lazy<Mutex<Option<PathBuf>>> = Lazy::new(|| Mutex::new(None));
 
 fn data_dir() -> Result<PathBuf, CoreError> {
+    if let Ok(env_path) = std::env::var("BELLJAR_DATA_DIR") {
+        let p = PathBuf::from(env_path);
+        if !p.as_os_str().is_empty() {
+            fs::create_dir_all(&p)?;
+            return Ok(p);
+        }
+    }
     if let Some(p) = DATA_DIR_OVERRIDE.lock().unwrap().clone() {
         fs::create_dir_all(&p)?;
         return Ok(p);
@@ -144,40 +151,25 @@ pub mod git {
 
     pub fn ensure_worktree(repo: &Path, label: &str, branch: &Option<String>) -> Result<PathBuf, CoreError> {
         let wt_dir = repo.join(".belljar").join("worktrees").join(label);
-        fs::create_dir_all(&wt_dir)?;
+        if let Some(parent) = wt_dir.parent() { fs::create_dir_all(parent)?; }
 
-        // If branch provided, create it if missing
-        if let Some(br) = branch {
-            let exists = Command::new(git())
-                .args(["-C"]).arg(repo)
-                .args(["rev-parse", "--verify"]).arg(format!("refs/heads/{}", br))
-                .status()
-                .map(|s| s.success())
-                .unwrap_or(false);
-            if !exists {
-                let st = Command::new(git())
-                    .args(["-C"]).arg(repo)
-                    .args(["checkout", "-b"]).arg(br)
-                    .status()
-                    .map_err(|e| CoreError::Compose(format!("git checkout -b failed: {e}")))?;
-                if !st.success() {
-                    return Err(CoreError::Compose("failed to create branch".into()));
-                }
+        let run = |args: &[&str]| -> Result<bool, CoreError> {
+            let st = Command::new(git()).args(["-C"]).arg(repo).args(args).status()
+                .map_err(|e| CoreError::Compose(format!("git failed: {e}")))?;
+            Ok(st.success())
+        };
+
+        let ok = match branch {
+            Some(br) => {
+                // Try creating a new branch in the worktree, else attach existing branch
+                run(&["worktree", "add", "-b", br, wt_dir.to_str().unwrap(), "HEAD"]).unwrap_or(false)
+                    || run(&["worktree", "add", wt_dir.to_str().unwrap(), br]).unwrap_or(false)
             }
-        }
+            None => run(&["worktree", "add", wt_dir.to_str().unwrap()]).unwrap_or(false),
+        };
 
-        // Create worktree for the branch or current HEAD
-        let mut cmd = Command::new(git());
-        cmd.args(["-C"]).arg(repo).arg("worktree").arg("add");
-        if let Some(br) = branch {
-            cmd.arg(&wt_dir).arg(br);
-        } else {
-            cmd.arg(&wt_dir);
-        }
-        let status = cmd.status().map_err(|e| CoreError::Compose(format!("git worktree add failed: {e}")))?;
-        if !status.success() {
-            // If worktree exists, proceed; otherwise error
-            // We'll treat existing dir as acceptable for now
+        if !ok && !wt_dir.exists() {
+            return Err(CoreError::Compose("git worktree add failed".into()));
         }
         Ok(wt_dir)
     }

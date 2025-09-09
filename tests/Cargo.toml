@@ -8,3 +8,5 @@ publish = false
 par-core = { path = "../core", features = ["testing"] }
 proptest = "1.5"
 tempfile = "3.10"
+assert_cmd = "2.0"
+predicates = "3.1"
