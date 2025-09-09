@@ -28,6 +28,7 @@
 - Integration tests in `tests/` using black-box interfaces.
 - Name tests descriptively (e.g., `test_runs_parallel_graph`), keep fast by default; gate slow/docker tests behind `DOCKER_TESTS=1`.
 - Ensure core logic has meaningful coverage; test error paths and cancellation.
+- Coverage: target and maintain 100%. Check with `cargo llvm-cov --workspace --text` (HTML: `--html`). If needed: `cargo install cargo-llvm-cov && rustup component add llvm-tools-preview`.
 
 ## Commit & Pull Request Guidelines
 - Use Conventional Commits: `feat:`, `fix:`, `docs:`, `refactor:`, `test:`, `build:`, `ci:`, `chore:`.
