@@ -13,6 +13,8 @@ A Rust CLI inspired by coplane/par for managing development sessions and worktre
 - Checkout a branch into a session:
   - `cargo run -p par-cli -- checkout feature-x --path . --label fx`
   - Creates a git worktree at `.belljar/worktrees/fx` and records the session.
+- Tests (unit + integration): `cargo test`.
+- Property tests: proptest is preferred for pure logic. Default cases are modest. Increase cases for a smoke run: `PROPTEST_CASES=1000 cargo test`.
 - Open and send commands (tmux):
   - `cargo run -p par-cli -- open my-feature`
   - `cargo run -p par-cli -- send my-feature "make test"`

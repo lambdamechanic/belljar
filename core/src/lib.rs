@@ -10,6 +10,8 @@ use std::{
 use thiserror::Error;
 use time::OffsetDateTime;
 use uuid::Uuid;
+use once_cell::sync::Lazy;
+use std::sync::Mutex;
 
 /// Returns the semantic version of the core crate.
 pub fn version() -> &'static str {
@@ -52,7 +54,13 @@ pub struct Registry {
     pub sessions: Vec<Session>,
 }
 
+static DATA_DIR_OVERRIDE: Lazy<Mutex<Option<PathBuf>>> = Lazy::new(|| Mutex::new(None));
+
 fn data_dir() -> Result<PathBuf, CoreError> {
+    if let Some(p) = DATA_DIR_OVERRIDE.lock().unwrap().clone() {
+        fs::create_dir_all(&p)?;
+        return Ok(p);
+    }
     let dirs = ProjectDirs::from("dev", "par-rs", "par-rs").ok_or(CoreError::NoRegistryPath)?;
     let dir = dirs.data_dir().to_path_buf();
     fs::create_dir_all(&dir)?;
@@ -81,6 +89,16 @@ pub fn save_registry(reg: &Registry) -> Result<(), CoreError> {
     let s = serde_json::to_string_pretty(reg)?;
     f.write_all(s.as_bytes())?;
     Ok(())
+}
+
+#[cfg(feature = "testing")]
+pub fn set_data_dir_override_for_testing<P: Into<PathBuf>>(p: P) {
+    *DATA_DIR_OVERRIDE.lock().unwrap() = Some(p.into());
+}
+
+#[cfg(feature = "testing")]
+pub fn clear_data_dir_override_for_testing() {
+    *DATA_DIR_OVERRIDE.lock().unwrap() = None;
 }
 
 pub fn create_session(label: &str, repo_path: &Path, branch: Option<String>, services: Vec<String>) -> Result<Session, CoreError> {
@@ -221,7 +239,9 @@ pub mod compose {
                 })
                 .collect();
             entries.sort();
-            files.extend(entries);
+            if !entries.is_empty() {
+                return Ok(entries);
+            }
         }
 
         // Fallback to common compose filenames in repo root
@@ -238,6 +258,11 @@ pub mod compose {
         }
 
         Ok(files)
+    }
+
+    #[cfg(feature = "testing")]
+    pub fn discover_files_for_repo(repo_path: &Path) -> Vec<PathBuf> {
+        discover_files(repo_path).unwrap_or_default()
     }
 
     pub fn up(session: &Session) -> Result<(), CoreError> {
