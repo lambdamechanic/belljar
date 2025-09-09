@@ -34,6 +34,12 @@
 - PRs: include summary, rationale, linked issues, and usage notes; attach logs or screenshots when UX changes.
 - Keep changes scoped; update docs/examples when interfaces or flags change.
 
+## Plan-Driven Workflow
+- Always work from `PLAN.md` as the single source of truth.
+- Update statuses (DONE/IN PROGRESS/PENDING) as you progress; adjust phases/milestones when scope changes.
+- Commit plan edits alongside feature changes affecting the plan, and reference them in PR descriptions.
+- Prefer small, iterative plan updates over large rewrites to keep contributors aligned.
+
 ## Security & Configuration Tips
 - Requires Docker and Docker Compose v2. Each session uses a unique compose project; avoid mounting host `docker.sock` into containers.
 - Do not commit secrets; use env files or `direnv`. Clean up sessions unless `--keep` is intentional.
