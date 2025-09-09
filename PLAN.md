@@ -14,7 +14,7 @@
 - Session isolation via `docker compose -p <unique_session>` to namespace networks, volumes, and containers.
 - Config-driven services come from the target repository's compose files. belljar discovers `.belljar/compose/*.yml` or `docker-compose.yml|yaml`/`compose.yml|yaml` in the repo; no built-in templates.
 
-## Phase 0 — Recon and Spec
+## Phase 0 — Recon and Spec — [DONE]
 1. Review `coplane/par` repository to enumerate:
    - CLI commands, flags, and config it supports (sessions/workspaces).
    - Core semantics: session labels, global registry, worktree/branch ergonomics, tmux integration.
@@ -22,9 +22,9 @@
 2. Draft a minimal feature spec and parity table (par -> par-rs), flag deltas.
 
 Deliverables:
-- `docs/spec.md` with command/flag mapping and MVP scope.
+- `docs/spec.md` with command/flag mapping and MVP scope. [DONE]
 
-## Phase 1 — Scaffolding
+## Phase 1 — Scaffolding — [DONE]
 1. Initialize Rust workspace (`Cargo.toml` with members `app`, `core`).
 2. Create crates:
    - `core/` (lib): repo/worktree ops, session registry, tmux + compose drivers.
@@ -32,35 +32,35 @@ Deliverables:
 3. Establish `tests/` for integration tests; add a `docker` feature gate to enable Docker tests.
 
 Deliverables:
-- Compiling workspace with `--help` showing CLI skeleton.
+- Compiling workspace with `--help` showing CLI skeleton. [DONE]
 
-## Phase 2 — CLI UX + Core APIs
+## Phase 2 — CLI UX + Core APIs — [DONE]
 1. Implement CLI surface with subcommands:
    - `start`, `checkout`, `ls`, `open`, `rm`, `send`, `control-center`, `workspace <...>`.
 2. Define session model: label, repo path, branch, worktree path, compose project, selected services.
-3. Establish a registry (on-disk DB under `~/.local/share/par-rs`) to track sessions/workspaces.
+3. Establish a registry (on-disk DB under data dir) to track sessions/workspaces. [DONE]
 
 Deliverables:
-- Parsing, validation errors, and a sample config under `examples/`.
+- CLI subcommands scaffolded; session model + registry implemented. [DONE]
 
-## Phase 3 — Docker Compose Isolation
+## Phase 3 — Docker Compose Isolation — [DONE]
 1. Compose driver:
-   - Generate unique session id and compose project name.
-   - Render compose file(s) from templates (services selected via CLI/config).
-   - Bring up with healthchecks; stream logs on demand.
-   - Inject env/ports/volumes per session.
-2. Lifecycle API: `provision()`, `exec(cmd)`, `teardown()`, with `--keep` to skip teardown and `--reuse <session>` for debugging.
+   - Generate unique session id and compose project name. [DONE]
+   - Discover repo-provided compose files (`.belljar/compose/*.yml` or `docker-compose*.yml`). [DONE]
+   - Bring up/down with `docker compose -p <project>`; log errors. [DONE]
+2. Lifecycle API: `provision()`, `exec(cmd)`, `teardown()` (up/down implemented; exec TBD).
 3. Cross-platform nuances (Docker Desktop/macOS) and TTY handling.
 
 Deliverables:
 - Working isolated services (e.g., Postgres/Redis) per run with `-p <session>`.
 
-## Phase 4 — Repo, Worktree, and Tmux
+## Phase 4 — Repo, Worktree, and Tmux — [IN PROGRESS]
 1. Implement `start` to create a worktree and branch, initialize session registry, and launch tmux session.
-2. Implement `checkout` to attach to existing branches/PRs per par behavior.
-3. Implement `open`, `send`, and `control-center` with tmux control and helpful UX.
+   - tmux `open` and `send` implemented; worktree/branch creation pending.
+2. Implement `checkout` to attach to existing branches/PRs per par behavior. [PENDING]
+3. Implement `control-center` with tmux panes/windows. [PENDING]
 
-## Phase 5 — Testing and CI
+## Phase 5 — Testing and CI — [PENDING]
 1. Unit tests for parsing, graph topology, and CLI arg merging.
 2. Integration tests (gated with `DOCKER_TESTS=1`) to spin services and run sample tasks.
 3. GitHub Actions:
@@ -70,7 +70,7 @@ Deliverables:
 Deliverables:
 - Green CI for non-Docker paths; documented local flow for Docker tests.
 
-## Phase 6 — UX Polish & Docs
+## Phase 6 — UX Polish & Docs — [PENDING]
 1. Human-friendly logs (task prefixes, colors, timing) and `--json` for machine parsing.
 2. Errors with suggestions; `par-rs doctor` for environment diagnostics.
 3. Documentation:
@@ -87,13 +87,13 @@ Deliverables:
 - Extensibility: service templates as modular YAML snippets in `assets/compose/`.
 
 ## Milestones
-M1: Workspace + CLI skeleton + spec
-M2: Config parsing + basic run
-M3: Per-session compose up/down with Postgres
-M4: Repo/worktree + tmux integration
-M5: Integration tests + CI
-M6: Docs + examples + 0.1 release
-M7: Dogfood par-rs to develop itself (use par-rs sessions/workspaces to work on this repo; run isolated compose stacks during development)
+M1: Workspace + CLI skeleton + spec — DONE
+M2: Registry + compose discovery + up/down — DONE
+M3: tmux open/send for sessions — DONE
+M4: Repo worktree/branch creation + checkout — IN PROGRESS
+M5: Integration tests + CI — PENDING
+M6: Docs + examples + 0.1 release — PENDING
+M7: Dogfood belljar to develop itself — PENDING
 
 ## Open Questions / To Validate
 - Exact parity surface from `coplane/par` (commands/flags that are must-have for MVP).
