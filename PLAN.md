@@ -54,18 +54,19 @@ Deliverables:
 Deliverables:
 - Working isolated services (e.g., Postgres/Redis) per run with `-p <session>`.
 
-## Phase 4 — Repo, Worktree, and Tmux — [IN PROGRESS]
+## Phase 4 — Repo, Worktree, and Tmux — [DONE]
 1. Implement `start` to create a worktree and branch, initialize session registry, and launch tmux session.
-   - tmux `open` and `send` implemented; worktree/branch creation pending.
+   - tmux `open` and `send` implemented; worktree/branch creation implemented.
 2. Implement `checkout` to attach to existing branches (branch name only for MVP). [DONE]
 3. Implement `control-center` with tmux panes/windows. [DONE — basic tmux session with per-session windows]
 
-## Phase 5 — Testing and CI — [PENDING]
-1. Unit tests for parsing, graph topology, and CLI arg merging.
-2. Integration tests (gated with `DOCKER_TESTS=1`) to spin services and run sample tasks.
+## Phase 5 — Testing and CI — [IN PROGRESS]
+1. Tests added for registry, compose discovery/up/down, tmux helpers, git worktree, and CLI flows. [DONE]
+2. Coverage: cargo-llvm-cov script and README docs; property tests preferred. [DONE]
 3. GitHub Actions:
-   - Lint + unit tests (no Docker) on PRs.
-   - Optional self-hosted or workflow dispatch for Docker tests.
+   - Lint + unit tests (no Docker) on PRs. [TODO]
+   - Coverage report job (text + lcov). [TODO]
+   - Optional self-hosted or workflow dispatch for Docker tests. [PENDING]
 
 Deliverables:
 - Green CI for non-Docker paths; documented local flow for Docker tests.
@@ -90,8 +91,8 @@ Deliverables:
 M1: Workspace + CLI skeleton + spec — DONE
 M2: Registry + compose discovery + up/down — DONE
 M3: tmux open/send for sessions — DONE
-M4: Repo worktree/branch creation + checkout — IN PROGRESS
-M5: Integration tests + CI — PENDING
+M4: Repo worktree/branch creation + checkout — DONE
+M5: Tests + CI (coverage) — IN PROGRESS
 M6: Docs + examples + 0.1 release — PENDING
 M7: Dogfood belljar to develop itself — PENDING
 
