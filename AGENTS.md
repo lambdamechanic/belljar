@@ -14,7 +14,7 @@
 - Start a session: `cargo run -p par-cli -- start demo --path .` (belljar will provision compose if it finds `.belljar/compose/*.yml` or `docker-compose.yml|yaml`).
 - Tests (unit + integration): `cargo test`.
 - Docker-gated tests: `DOCKER_TESTS=1 cargo test` (requires Docker + Compose v2).
-- Lint: `cargo clippy --all-targets --all-features -D warnings`.
+- Lint: `cargo clippy --all-targets --all-features -- -D warnings`.
 - Format: `cargo fmt --all`.
 
 ## Coding Style & Naming Conventions
@@ -35,6 +35,9 @@
 - Use Conventional Commits: `feat:`, `fix:`, `docs:`, `refactor:`, `test:`, `build:`, `ci:`, `chore:`.
 - PRs: include summary, rationale, linked issues, and usage notes; attach logs or screenshots when UX changes.
 - Keep changes scoped; update docs/examples when interfaces or flags change.
+- Before opening a PR: ensure formatting and linting are clean.
+  - Format: `cargo fmt --all` (no diffs).
+  - Lint: `cargo clippy --all-targets --all-features -D warnings` (zero warnings).
 
 ## Plan-Driven Workflow
 - Always work from `PLAN.md` as the single source of truth.

@@ -1,9 +1,13 @@
 use clap::{Args, Parser, Subcommand};
-use std::path::PathBuf;
 use std::path::Path;
+use std::path::PathBuf;
 
 #[derive(Parser, Debug)]
-#[command(name = "belljar", version, about = "belljar: session/worktree manager with per-session Docker Compose isolation")] 
+#[command(
+    name = "belljar",
+    version,
+    about = "belljar: session/worktree manager with per-session Docker Compose isolation"
+)]
 struct Cli {
     #[command(subcommand)]
     command: Commands,
@@ -28,11 +32,17 @@ enum Commands {
     /// Remove a session or all sessions
     Rm { target: String },
     /// Send a command to a session or all
-    Send { target: String, command: Vec<String> },
+    Send {
+        target: String,
+        command: Vec<String>,
+    },
     /// Show control center (placeholder)
     ControlCenter,
     /// Workspace subcommands (placeholder)
-    Workspace { #[arg()] subcommand: Vec<String> },
+    Workspace {
+        #[arg()]
+        subcommand: Vec<String>,
+    },
     /// Print internal version details
     Version,
 }
@@ -53,8 +63,9 @@ fn main() -> anyhow::Result<()> {
     match cli.command {
         Commands::Start(args) => {
             let repo = resolve_repo_path(args.path.as_deref())?;
-            let mut session = par_core::create_session(&args.label, &repo, args.branch.clone(), vec![])
-                .map_err(|e| anyhow::anyhow!("create session failed: {e}"))?;
+            let mut session =
+                par_core::create_session(&args.label, &repo, args.branch.clone(), vec![])
+                    .map_err(|e| anyhow::anyhow!("create session failed: {e}"))?;
 
             // Ensure worktree if repo is git
             if par_core::git::is_git_repo(&repo) {
@@ -80,11 +91,18 @@ fn main() -> anyhow::Result<()> {
                 }
                 Err(e) => {
                     eprintln!("warning: compose up failed: {e}");
-                    println!("created session: {} (project: {})", session.label, session.compose_project);
+                    println!(
+                        "created session: {} (project: {})",
+                        session.label, session.compose_project
+                    );
                 }
             }
         }
-        Commands::Checkout { target, path, label } => {
+        Commands::Checkout {
+            target,
+            path,
+            label,
+        } => {
             let repo = resolve_repo_path(path.as_deref())?;
             let label = label.unwrap_or_else(|| target.clone());
             let mut session = par_core::create_session(&label, &repo, Some(target.clone()), vec![])
@@ -116,7 +134,12 @@ fn main() -> anyhow::Result<()> {
                 println!("no sessions");
             } else {
                 for s in reg.sessions {
-                    println!("{}\t{}\t{}", s.label, s.repo_path.display(), s.compose_project);
+                    println!(
+                        "{}\t{}\t{}",
+                        s.label,
+                        s.repo_path.display(),
+                        s.compose_project
+                    );
                 }
             }
         }
@@ -146,7 +169,7 @@ fn main() -> anyhow::Result<()> {
                         Err(e) => eprintln!("failed to open session: {e}"),
                     }
                 }
-                Ok(None) => println!("no such session: {}", label),
+                Ok(None) => println!("no such session: {label}"),
                 Err(e) => eprintln!("failed to load registry: {e}"),
             }
         }
@@ -162,20 +185,18 @@ fn main() -> anyhow::Result<()> {
                     let _ = par_core::remove_session(&s.label);
                     println!("removed {}", s.label);
                 }
-            } else {
-                if let Some(s) = par_core::find_session(&target)
-                    .map_err(|e| anyhow::anyhow!("find session failed: {e}"))?
-                {
-                    match par_core::compose::down(&s) {
-                        Ok(()) | Err(par_core::CoreError::NoComposeFiles) => {}
-                        Err(e) => eprintln!("warning: compose down failed for {}: {e}", s.label),
-                    }
-                    par_core::remove_session(&target)
-                        .map_err(|e| anyhow::anyhow!("remove failed: {e}"))?;
-                    println!("removed {}", s.label);
-                } else {
-                    println!("no such session: {}", target);
+            } else if let Some(s) = par_core::find_session(&target)
+                .map_err(|e| anyhow::anyhow!("find session failed: {e}"))?
+            {
+                match par_core::compose::down(&s) {
+                    Ok(()) | Err(par_core::CoreError::NoComposeFiles) => {}
+                    Err(e) => eprintln!("warning: compose down failed for {}: {e}", s.label),
                 }
+                par_core::remove_session(&target)
+                    .map_err(|e| anyhow::anyhow!("remove failed: {e}"))?;
+                println!("removed {}", s.label);
+            } else {
+                println!("no such session: {target}");
             }
         }
         Commands::Send { target, command } => {
@@ -186,7 +207,8 @@ fn main() -> anyhow::Result<()> {
                         for s in reg.sessions {
                             match par_core::tmux::ensure_session(&s) {
                                 Ok(()) => {
-                                    if let Err(e) = par_core::tmux::send_keys(&s.tmux_session, &cmd) {
+                                    if let Err(e) = par_core::tmux::send_keys(&s.tmux_session, &cmd)
+                                    {
                                         eprintln!("send to {} failed: {e}", s.label);
                                     }
                                 }
@@ -198,17 +220,15 @@ fn main() -> anyhow::Result<()> {
                 }
             } else {
                 match par_core::find_session(&target) {
-                    Ok(Some(s)) => {
-                        match par_core::tmux::ensure_session(&s) {
-                            Ok(()) => {
-                                if let Err(e) = par_core::tmux::send_keys(&s.tmux_session, &cmd) {
-                                    eprintln!("send failed: {e}");
-                                }
+                    Ok(Some(s)) => match par_core::tmux::ensure_session(&s) {
+                        Ok(()) => {
+                            if let Err(e) = par_core::tmux::send_keys(&s.tmux_session, &cmd) {
+                                eprintln!("send failed: {e}");
                             }
-                            Err(e) => eprintln!("ensure session failed: {e}"),
                         }
-                    }
-                    Ok(None) => println!("no such session: {}", target),
+                        Err(e) => eprintln!("ensure session failed: {e}"),
+                    },
+                    Ok(None) => println!("no such session: {target}"),
                     Err(e) => eprintln!("failed to load registry: {e}"),
                 }
             }
@@ -227,7 +247,9 @@ fn main() -> anyhow::Result<()> {
                             Ok(()) => {
                                 for s in reg.sessions {
                                     // Try to create a window per session label
-                                    if let Err(e) = par_core::tmux::new_window(cc_name, &s.label, &s.repo_path) {
+                                    if let Err(e) =
+                                        par_core::tmux::new_window(cc_name, &s.label, &s.repo_path)
+                                    {
                                         eprintln!("failed to create window for {}: {e}", s.label);
                                     }
                                 }
@@ -249,10 +271,14 @@ fn main() -> anyhow::Result<()> {
             }
         }
         Commands::Workspace { subcommand } => {
-            println!("par workspace {:?} (placeholder)", subcommand);
+            println!("par workspace {subcommand:?} (placeholder)");
         }
         Commands::Version => {
-            println!("par {} (core {})", env!("CARGO_PKG_VERSION"), par_core::version());
+            println!(
+                "par {} (core {})",
+                env!("CARGO_PKG_VERSION"),
+                par_core::version()
+            );
         }
     }
     Ok(())

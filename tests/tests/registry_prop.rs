@@ -21,7 +21,7 @@ proptest! {
         let mut seen = HashSet::new();
         for (i, label) in labels.iter().enumerate() {
             if seen.insert(label.clone()) {
-                let branch = if i % 2 == 0 { Some(format!("feat_{}", i)) } else { None };
+                let branch = if i % 2 == 0 { Some(format!("feat_{i}")) } else { None };
                 let s = par_core::create_session(label, repo, branch, vec![]).expect("create session");
                 assert_eq!(&s.label, label);
             }

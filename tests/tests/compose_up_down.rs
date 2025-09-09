@@ -1,9 +1,9 @@
 use std::fs;
 use std::os::unix::fs::PermissionsExt;
-use std::path::PathBuf;
+use std::path::Path;
 use tempfile::TempDir;
 
-fn prepend_path(dir: &PathBuf) -> String {
+fn prepend_path(dir: &Path) -> String {
     let old = std::env::var("PATH").unwrap_or_default();
     format!("{}:{}", dir.display(), old)
 }
@@ -25,12 +25,15 @@ fn compose_up_down_uses_repo_files_and_docker() {
     let shim_dir = TempDir::new().unwrap();
     let log = shim_dir.path().join("docker.log");
     let shim = shim_dir.path().join("docker");
-    let script = format!("#!/usr/bin/env bash\necho \"$@\" >> {}\nexit 0\n", log.display());
+    let script = format!(
+        "#!/usr/bin/env bash\necho \"$@\" >> {}\nexit 0\n",
+        log.display()
+    );
     fs::write(&shim, script).unwrap();
     let mut perm = fs::metadata(&shim).unwrap().permissions();
     perm.set_mode(0o755);
     fs::set_permissions(&shim, perm).unwrap();
-    std::env::set_var("PATH", prepend_path(&shim_dir.path().to_path_buf()));
+    std::env::set_var("PATH", prepend_path(shim_dir.path()));
 
     // Create a session
     let s = par_core::create_session("t", repo, None, vec![]).unwrap();
@@ -46,4 +49,3 @@ fn compose_up_down_uses_repo_files_and_docker() {
     assert!(logged.contains("up -d"));
     assert!(logged.contains("down -v"));
 }
-

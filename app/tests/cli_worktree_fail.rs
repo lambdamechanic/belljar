@@ -1,12 +1,11 @@
-use assert_cmd::prelude::*;
 use assert_cmd::Command;
 use predicates::prelude::*;
 use std::fs;
 use std::os::unix::fs::PermissionsExt;
-use std::path::PathBuf;
+use std::path::Path;
 use tempfile::TempDir;
 
-fn prepend_path(dir: &PathBuf) -> String {
+fn prepend_path(dir: &Path) -> String {
     let old = std::env::var("PATH").unwrap_or_default();
     format!("{}:{}", dir.display(), old)
 }
@@ -25,12 +24,13 @@ fn worktree_setup_failure_is_warned() {
     perm.set_mode(0o755);
     fs::set_permissions(&git, perm).unwrap();
 
-    Command::cargo_bin("belljar").unwrap()
-        .args(["start", "s1", "--path"]).arg(repo.path())
+    Command::cargo_bin("belljar")
+        .unwrap()
+        .args(["start", "s1", "--path"])
+        .arg(repo.path())
         .env("BELLJAR_DATA_DIR", data.path())
-        .env("PATH", prepend_path(&shim_dir.path().to_path_buf()))
+        .env("PATH", prepend_path(shim_dir.path()))
         .assert()
         .success()
         .stderr(predicate::str::contains("worktree setup failed"));
 }
-
