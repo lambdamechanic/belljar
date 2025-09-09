@@ -16,6 +16,9 @@ fn init_git_repo_with_compose() -> (tempfile::TempDir, PathBuf) {
         .status()
         .unwrap()
         .success());
+    // set identity for commit on CI
+    assert!(Command::new("git").arg("-C").arg(repo).args(["config","user.email","ci@example.com"]).status().unwrap().success());
+    assert!(Command::new("git").arg("-C").arg(repo).args(["config","user.name","CI"]).status().unwrap().success());
     fs::write(repo.join("README.md"), "init\n").unwrap();
     assert!(Command::new("git")
         .arg("-C")

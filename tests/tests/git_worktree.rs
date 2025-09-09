@@ -18,6 +18,8 @@ fn git_worktree_creates_dir() {
         .status()
         .unwrap()
         .success());
+    assert!(Command::new("git").arg("-C").arg(repo).args(["config","user.email","ci@example.com"]).status().unwrap().success());
+    assert!(Command::new("git").arg("-C").arg(repo).args(["config","user.name","CI"]).status().unwrap().success());
     // create initial commit
     std::fs::write(repo.join("README.md"), "init\n").unwrap();
     assert!(Command::new("git")

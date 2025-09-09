@@ -46,6 +46,8 @@ fn init_git_repo() -> tempfile::TempDir {
         .status()
         .unwrap()
         .success());
+    assert!(Command::new("git").arg("-C").arg(repo).args(["config","user.email","ci@example.com"]).status().unwrap().success());
+    assert!(Command::new("git").arg("-C").arg(repo).args(["config","user.name","CI"]).status().unwrap().success());
     fs::write(repo.join("README.md"), "init\n").unwrap();
     assert!(Command::new("git")
         .arg("-C")
