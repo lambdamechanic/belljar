@@ -53,8 +53,18 @@ fn main() -> anyhow::Result<()> {
     match cli.command {
         Commands::Start(args) => {
             let repo = resolve_repo_path(args.path.as_deref())?;
-            let session = par_core::create_session(&args.label, &repo, args.branch, vec![])
+            let mut session = par_core::create_session(&args.label, &repo, args.branch.clone(), vec![])
                 .map_err(|e| anyhow::anyhow!("create session failed: {e}"))?;
+
+            // Ensure worktree if repo is git
+            if par_core::git::is_git_repo(&repo) {
+                match par_core::git::ensure_worktree(&repo, &args.label, &args.branch) {
+                    Ok(wt) => {
+                        par_core::git::set_session_worktree(&mut session, wt).ok();
+                    }
+                    Err(e) => eprintln!("warning: worktree setup failed: {e}"),
+                }
+            }
             match par_core::compose::up(&session) {
                 Ok(()) => {
                     println!(

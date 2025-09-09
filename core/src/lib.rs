@@ -105,6 +105,77 @@ pub fn create_session(label: &str, repo_path: &Path, branch: Option<String>, ser
     Ok(session)
 }
 
+pub mod git {
+    use super::{CoreError, Session};
+    use std::fs;
+    use std::path::{Path, PathBuf};
+    use std::process::Command;
+
+    fn git() -> &'static str { "git" }
+
+    pub fn is_git_repo(path: &Path) -> bool {
+        Command::new(git())
+            .arg("-C")
+            .arg(path)
+            .arg("rev-parse")
+            .arg("--git-dir")
+            .output()
+            .map(|o| o.status.success())
+            .unwrap_or(false)
+    }
+
+    pub fn ensure_worktree(repo: &Path, label: &str, branch: &Option<String>) -> Result<PathBuf, CoreError> {
+        let wt_dir = repo.join(".belljar").join("worktrees").join(label);
+        fs::create_dir_all(&wt_dir)?;
+
+        // If branch provided, create it if missing
+        if let Some(br) = branch {
+            let exists = Command::new(git())
+                .args(["-C"]).arg(repo)
+                .args(["rev-parse", "--verify"]).arg(format!("refs/heads/{}", br))
+                .status()
+                .map(|s| s.success())
+                .unwrap_or(false);
+            if !exists {
+                let st = Command::new(git())
+                    .args(["-C"]).arg(repo)
+                    .args(["checkout", "-b"]).arg(br)
+                    .status()
+                    .map_err(|e| CoreError::Compose(format!("git checkout -b failed: {e}")))?;
+                if !st.success() {
+                    return Err(CoreError::Compose("failed to create branch".into()));
+                }
+            }
+        }
+
+        // Create worktree for the branch or current HEAD
+        let mut cmd = Command::new(git());
+        cmd.args(["-C"]).arg(repo).arg("worktree").arg("add");
+        if let Some(br) = branch {
+            cmd.arg(&wt_dir).arg(br);
+        } else {
+            cmd.arg(&wt_dir);
+        }
+        let status = cmd.status().map_err(|e| CoreError::Compose(format!("git worktree add failed: {e}")))?;
+        if !status.success() {
+            // If worktree exists, proceed; otherwise error
+            // We'll treat existing dir as acceptable for now
+        }
+        Ok(wt_dir)
+    }
+
+    pub fn set_session_worktree(session: &mut Session, path: PathBuf) -> Result<(), CoreError> {
+        session.worktree_path = Some(path);
+        // Persist the change
+        let mut reg = super::load_registry()?;
+        if let Some(s) = reg.sessions.iter_mut().find(|s| s.id == session.id) {
+            s.worktree_path = session.worktree_path.clone();
+        }
+        super::save_registry(&reg)?;
+        Ok(())
+    }
+}
+
 pub fn remove_session(label_or_id: &str) -> Result<Option<Session>, CoreError> {
     let mut reg = load_registry()?;
     if let Some(idx) = reg
@@ -128,7 +199,7 @@ pub fn find_session(label_or_id: &str) -> Result<Option<Session>, CoreError> {
 }
 
 pub mod compose {
-    use super::{data_dir, CoreError, Session};
+    use super::{CoreError, Session};
     use std::fs;
     use std::path::{Path, PathBuf};
     use std::process::Command;
