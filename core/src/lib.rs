@@ -49,9 +49,21 @@ pub struct Session {
     pub created_at: String,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Workspace {
+    pub id: String,
+    pub label: String,
+    pub root_path: PathBuf,
+    pub repos: Vec<PathBuf>,
+    pub tmux_session: String,
+    pub created_at: String,
+}
+
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct Registry {
     pub sessions: Vec<Session>,
+    #[serde(default)]
+    pub workspaces: Vec<Workspace>,
 }
 
 static DATA_DIR_OVERRIDE: Lazy<Mutex<Option<PathBuf>>> = Lazy::new(|| Mutex::new(None));
@@ -327,6 +339,56 @@ pub mod compose {
         }
         Ok(())
     }
+}
+
+pub fn create_workspace(
+    label: &str,
+    root: &Path,
+    repos: Vec<PathBuf>,
+) -> Result<Workspace, CoreError> {
+    let mut reg = load_registry()?;
+    let id = Uuid::new_v4().to_string();
+    let tmux_session = format!("ws-{label}");
+    let created_at = OffsetDateTime::now_utc()
+        .format(&time::format_description::well_known::Rfc3339)
+        .unwrap_or_default();
+    let ws = Workspace {
+        id,
+        label: label.to_string(),
+        root_path: root.to_path_buf(),
+        repos,
+        tmux_session,
+        created_at,
+    };
+    reg.workspaces.push(ws.clone());
+    save_registry(&reg)?;
+    Ok(ws)
+}
+
+pub fn list_workspaces() -> Result<Vec<Workspace>, CoreError> {
+    Ok(load_registry()?.workspaces)
+}
+
+pub fn find_workspace(label_or_id: &str) -> Result<Option<Workspace>, CoreError> {
+    let reg = load_registry()?;
+    Ok(reg
+        .workspaces
+        .into_iter()
+        .find(|w| w.label == label_or_id || w.id == label_or_id))
+}
+
+pub fn remove_workspace(label_or_id: &str) -> Result<Option<Workspace>, CoreError> {
+    let mut reg = load_registry()?;
+    if let Some(idx) = reg
+        .workspaces
+        .iter()
+        .position(|w| w.label == label_or_id || w.id == label_or_id)
+    {
+        let w = reg.workspaces.remove(idx);
+        save_registry(&reg)?;
+        return Ok(Some(w));
+    }
+    Ok(None)
 }
 
 pub mod tmux {

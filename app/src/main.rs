@@ -38,10 +38,10 @@ enum Commands {
     },
     /// Show control center (placeholder)
     ControlCenter,
-    /// Workspace subcommands (placeholder)
+    /// Workspace subcommands
     Workspace {
-        #[arg()]
-        subcommand: Vec<String>,
+        #[command(subcommand)]
+        command: WorkspaceCmd,
     },
     /// Print internal version details
     Version,
@@ -56,6 +56,28 @@ struct StartArgs {
     /// Branch name to create/checkout
     #[arg(long)]
     branch: Option<String>,
+}
+
+#[derive(Subcommand, Debug)]
+enum WorkspaceCmd {
+    /// List all workspaces
+    Ls,
+    /// Create a workspace with optional repos
+    Start {
+        label: String,
+        #[arg(short, long)]
+        path: Option<PathBuf>,
+        /// Comma-separated relative repo paths under root
+        #[arg(long, value_delimiter = ',')]
+        repos: Vec<String>,
+        /// Open in tmux after creating
+        #[arg(long)]
+        open: bool,
+    },
+    /// Open a workspace tmux session
+    Open { label: String },
+    /// Remove a workspace by label or id
+    Rm { target: String },
 }
 
 fn main() -> anyhow::Result<()> {
@@ -270,9 +292,61 @@ fn main() -> anyhow::Result<()> {
                 Err(e) => eprintln!("failed to load registry: {e}"),
             }
         }
-        Commands::Workspace { subcommand } => {
-            println!("par workspace {subcommand:?} (placeholder)");
-        }
+        Commands::Workspace { command: ws } => match ws {
+            WorkspaceCmd::Ls => match par_core::list_workspaces() {
+                Ok(list) => {
+                    if list.is_empty() {
+                        println!("no workspaces");
+                    } else {
+                        for w in list {
+                            println!("{}\t{}", w.label, w.root_path.display());
+                        }
+                    }
+                }
+                Err(e) => eprintln!("failed to list workspaces: {e}"),
+            },
+            WorkspaceCmd::Start {
+                label,
+                path,
+                repos,
+                open,
+            } => {
+                let root = resolve_repo_path(path.as_deref())?;
+                let repo_paths: Vec<PathBuf> = repos.into_iter().map(|r| root.join(r)).collect();
+                match par_core::create_workspace(&label, &root, repo_paths) {
+                    Ok(ws) => {
+                        println!("created workspace: {}", ws.label);
+                        if open {
+                            let _ = par_core::tmux::ensure_named_session(
+                                &ws.tmux_session,
+                                &ws.root_path,
+                            );
+                            let _ = par_core::tmux::attach(&ws.tmux_session);
+                        }
+                    }
+                    Err(e) => eprintln!("failed to create workspace: {e}"),
+                }
+            }
+            WorkspaceCmd::Open { label } => match par_core::find_workspace(&label) {
+                Ok(Some(ws)) => {
+                    if let Err(e) =
+                        par_core::tmux::ensure_named_session(&ws.tmux_session, &ws.root_path)
+                    {
+                        eprintln!("failed to ensure workspace session: {e}");
+                    }
+                    if let Err(e) = par_core::tmux::attach(&ws.tmux_session) {
+                        eprintln!("failed to attach workspace: {e}");
+                    }
+                }
+                Ok(None) => println!("no such workspace: {label}"),
+                Err(e) => eprintln!("failed to load registry: {e}"),
+            },
+            WorkspaceCmd::Rm { target } => match par_core::remove_workspace(&target) {
+                Ok(Some(ws)) => println!("removed workspace {}", ws.label),
+                Ok(None) => println!("no such workspace: {target}"),
+                Err(e) => eprintln!("failed to remove workspace: {e}"),
+            },
+        },
         Commands::Version => {
             println!(
                 "par {} (core {})",
