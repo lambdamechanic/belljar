@@ -1,4 +1,3 @@
-use assert_cmd::prelude::*;
 use assert_cmd::Command;
 use predicates::prelude::*;
 use tempfile::TempDir;
@@ -6,8 +5,9 @@ use tempfile::TempDir;
 #[test]
 fn rm_unknown_session() {
     let data = TempDir::new().unwrap();
-    Command::cargo_bin("belljar").unwrap()
-        .args(["rm", "nope"]) 
+    Command::cargo_bin("belljar")
+        .unwrap()
+        .args(["rm", "nope"])
         .env("BELLJAR_DATA_DIR", data.path())
         .assert()
         .success()
@@ -17,8 +17,9 @@ fn rm_unknown_session() {
 #[test]
 fn open_unknown_session() {
     let data = TempDir::new().unwrap();
-    Command::cargo_bin("belljar").unwrap()
-        .args(["open", "nope"]) 
+    Command::cargo_bin("belljar")
+        .unwrap()
+        .args(["open", "nope"])
         .env("BELLJAR_DATA_DIR", data.path())
         .assert()
         .success()
@@ -28,8 +29,9 @@ fn open_unknown_session() {
 #[test]
 fn send_unknown_session() {
     let data = TempDir::new().unwrap();
-    Command::cargo_bin("belljar").unwrap()
-        .args(["send", "nope", "echo"]) 
+    Command::cargo_bin("belljar")
+        .unwrap()
+        .args(["send", "nope", "echo"])
         .env("BELLJAR_DATA_DIR", data.path())
         .assert()
         .success()

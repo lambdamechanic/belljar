@@ -1,9 +1,9 @@
 use std::fs;
 use std::os::unix::fs::PermissionsExt;
-use std::path::PathBuf;
+use std::path::Path;
 use tempfile::TempDir;
 
-fn prepend_path(dir: &PathBuf) -> String {
+fn prepend_path(dir: &Path) -> String {
     let old = std::env::var("PATH").unwrap_or_default();
     format!("{}:{}", dir.display(), old)
 }
@@ -19,7 +19,7 @@ fn tmux_helpers_call_binary() {
     let mut perm = fs::metadata(&shim).unwrap().permissions();
     perm.set_mode(0o755);
     fs::set_permissions(&shim, perm).unwrap();
-    std::env::set_var("PATH", prepend_path(&shim_dir.path().to_path_buf()));
+    std::env::set_var("PATH", prepend_path(shim_dir.path()));
 
     // Minimal session
     let s = par_core::Session {

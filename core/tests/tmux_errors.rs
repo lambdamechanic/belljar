@@ -37,9 +37,14 @@ fn new_window_and_select_layout_errors() {
 
     // new_window should error
     let e = par_core::tmux::new_window(&s.tmux_session, "w1", &s.repo_path).unwrap_err();
-    match e { par_core::CoreError::Tmux(_) => {}, _ => panic!("unexpected error") }
+    match e {
+        par_core::CoreError::Tmux(_) => {}
+        _ => panic!("unexpected error"),
+    }
     // select_layout should error
     let e = par_core::tmux::select_layout(&s.tmux_session, "tiled").unwrap_err();
-    match e { par_core::CoreError::Tmux(_) => {}, _ => panic!("unexpected error") }
+    match e {
+        par_core::CoreError::Tmux(_) => {}
+        _ => panic!("unexpected error"),
+    }
 }
-

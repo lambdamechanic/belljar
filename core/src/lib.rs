@@ -1,7 +1,9 @@
 //! par-core: internal library for par-rs
 
 use directories::ProjectDirs;
+use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
+use std::sync::Mutex;
 use std::{
     fs::{self, File},
     io::{Read, Write},
@@ -10,8 +12,6 @@ use std::{
 use thiserror::Error;
 use time::OffsetDateTime;
 use uuid::Uuid;
-use once_cell::sync::Lazy;
-use std::sync::Mutex;
 
 /// Returns the semantic version of the core crate.
 pub fn version() -> &'static str {
@@ -108,12 +108,19 @@ pub fn clear_data_dir_override_for_testing() {
     *DATA_DIR_OVERRIDE.lock().unwrap() = None;
 }
 
-pub fn create_session(label: &str, repo_path: &Path, branch: Option<String>, services: Vec<String>) -> Result<Session, CoreError> {
+pub fn create_session(
+    label: &str,
+    repo_path: &Path,
+    branch: Option<String>,
+    services: Vec<String>,
+) -> Result<Session, CoreError> {
     let mut reg = load_registry()?;
     let id = Uuid::new_v4().to_string();
     let compose_project = format!("parrs_{}", &id[..8]);
     let tmux_session = label.to_string();
-    let created_at = OffsetDateTime::now_utc().format(&time::format_description::well_known::Rfc3339).unwrap_or_default();
+    let created_at = OffsetDateTime::now_utc()
+        .format(&time::format_description::well_known::Rfc3339)
+        .unwrap_or_default();
     let session = Session {
         id,
         label: label.to_string(),
@@ -136,7 +143,9 @@ pub mod git {
     use std::path::{Path, PathBuf};
     use std::process::Command;
 
-    fn git() -> &'static str { "git" }
+    fn git() -> &'static str {
+        "git"
+    }
 
     pub fn is_git_repo(path: &Path) -> bool {
         Command::new(git())
@@ -149,12 +158,22 @@ pub mod git {
             .unwrap_or(false)
     }
 
-    pub fn ensure_worktree(repo: &Path, label: &str, branch: &Option<String>) -> Result<PathBuf, CoreError> {
+    pub fn ensure_worktree(
+        repo: &Path,
+        label: &str,
+        branch: &Option<String>,
+    ) -> Result<PathBuf, CoreError> {
         let wt_dir = repo.join(".belljar").join("worktrees").join(label);
-        if let Some(parent) = wt_dir.parent() { fs::create_dir_all(parent)?; }
+        if let Some(parent) = wt_dir.parent() {
+            fs::create_dir_all(parent)?;
+        }
 
         let run = |args: &[&str]| -> Result<bool, CoreError> {
-            let st = Command::new(git()).args(["-C"]).arg(repo).args(args).status()
+            let st = Command::new(git())
+                .args(["-C"])
+                .arg(repo)
+                .args(args)
+                .status()
                 .map_err(|e| CoreError::Compose(format!("git failed: {e}")))?;
             Ok(st.success())
         };
@@ -162,7 +181,15 @@ pub mod git {
         let ok = match branch {
             Some(br) => {
                 // Try creating a new branch in the worktree, else attach existing branch
-                run(&["worktree", "add", "-b", br, wt_dir.to_str().unwrap(), "HEAD"]).unwrap_or(false)
+                run(&[
+                    "worktree",
+                    "add",
+                    "-b",
+                    br,
+                    wt_dir.to_str().unwrap(),
+                    "HEAD",
+                ])
+                .unwrap_or(false)
                     || run(&["worktree", "add", wt_dir.to_str().unwrap(), br]).unwrap_or(false)
             }
             None => run(&["worktree", "add", wt_dir.to_str().unwrap()]).unwrap_or(false),
@@ -268,11 +295,12 @@ pub mod compose {
             cmd.arg("-f").arg(f);
         }
         cmd.arg("up").arg("-d");
-        let status = cmd.status().map_err(|e| CoreError::Compose(e.to_string()))?;
+        let status = cmd
+            .status()
+            .map_err(|e| CoreError::Compose(e.to_string()))?;
         if !status.success() {
             return Err(CoreError::Compose(format!(
-                "docker compose up failed with status {}",
-                status
+                "docker compose up failed with status {status}"
             )));
         }
         Ok(())
@@ -289,11 +317,12 @@ pub mod compose {
             cmd.arg("-f").arg(p);
         }
         cmd.arg("down").arg("-v");
-        let status = cmd.status().map_err(|e| CoreError::Compose(e.to_string()))?;
+        let status = cmd
+            .status()
+            .map_err(|e| CoreError::Compose(e.to_string()))?;
         if !status.success() {
             return Err(CoreError::Compose(format!(
-                "docker compose down failed with status {}",
-                status
+                "docker compose down failed with status {status}"
             )));
         }
         Ok(())

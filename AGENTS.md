@@ -35,6 +35,9 @@
 - Use Conventional Commits: `feat:`, `fix:`, `docs:`, `refactor:`, `test:`, `build:`, `ci:`, `chore:`.
 - PRs: include summary, rationale, linked issues, and usage notes; attach logs or screenshots when UX changes.
 - Keep changes scoped; update docs/examples when interfaces or flags change.
+- Before opening a PR: ensure formatting and linting are clean.
+  - Format: `cargo fmt --all` (no diffs).
+  - Lint: `cargo clippy --all-targets --all-features -D warnings` (zero warnings).
 
 ## Plan-Driven Workflow
 - Always work from `PLAN.md` as the single source of truth.

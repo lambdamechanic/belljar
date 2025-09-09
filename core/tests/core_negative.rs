@@ -7,9 +7,15 @@ fn compose_up_down_no_files() {
     let repo = TempDir::new().unwrap();
     let s = par_core::create_session("t", repo.path(), None, vec![]).unwrap();
     let up = par_core::compose::up(&s).unwrap_err();
-    match up { par_core::CoreError::NoComposeFiles => {}, _ => panic!("unexpected error") }
+    match up {
+        par_core::CoreError::NoComposeFiles => {}
+        _ => panic!("unexpected error"),
+    }
     let down = par_core::compose::down(&s).unwrap_err();
-    match down { par_core::CoreError::NoComposeFiles => {}, _ => panic!("unexpected error") }
+    match down {
+        par_core::CoreError::NoComposeFiles => {}
+        _ => panic!("unexpected error"),
+    }
 }
 
 #[test]
@@ -29,7 +35,9 @@ fn tmux_not_found() {
         created_at: "now".into(),
     };
     let e = par_core::tmux::ensure_session(&s).unwrap_err();
-    match e { par_core::CoreError::TmuxNotFound => {}, _ => panic!("unexpected error: {e}") }
+    match e {
+        par_core::CoreError::TmuxNotFound => {}
+        _ => panic!("unexpected error: {e}"),
+    }
     std::env::set_var("PATH", old);
 }
-

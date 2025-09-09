@@ -2,17 +2,35 @@ use assert_cmd::prelude::*;
 use predicates::prelude::*;
 use std::fs;
 use std::os::unix::fs::PermissionsExt;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::process::Command;
 use tempfile::TempDir;
 
 fn init_git_repo() -> tempfile::TempDir {
     let td = TempDir::new().unwrap();
     let repo = td.path();
-    assert!(Command::new("git").arg("-C").arg(repo).arg("init").status().unwrap().success());
+    assert!(Command::new("git")
+        .arg("-C")
+        .arg(repo)
+        .arg("init")
+        .status()
+        .unwrap()
+        .success());
     std::fs::write(repo.join("README.md"), "init\n").unwrap();
-    assert!(Command::new("git").arg("-C").arg(repo).args(["add", "."]).status().unwrap().success());
-    assert!(Command::new("git").arg("-C").arg(repo).args(["commit", "-m", "init"]).status().unwrap().success());
+    assert!(Command::new("git")
+        .arg("-C")
+        .arg(repo)
+        .args(["add", "."])
+        .status()
+        .unwrap()
+        .success());
+    assert!(Command::new("git")
+        .arg("-C")
+        .arg(repo)
+        .args(["commit", "-m", "init"])
+        .status()
+        .unwrap()
+        .success());
     td
 }
 
@@ -31,7 +49,7 @@ fn make_tmux_shim(has_session_exit: i32) -> (TempDir, PathBuf) {
     (dir, log)
 }
 
-fn prepend_path(dir: &PathBuf) -> String {
+fn prepend_path(dir: &Path) -> String {
     let old = std::env::var("PATH").unwrap_or_default();
     format!("{}:{}", dir.display(), old)
 }
@@ -43,24 +61,31 @@ fn open_and_send_use_tmux() {
     let (shim_dir, log) = make_tmux_shim(0); // has-session succeeds
 
     // start session
-    Command::cargo_bin("belljar").unwrap()
-        .args(["start", "s1", "--path"]).arg(repo.path())
+    Command::cargo_bin("belljar")
+        .unwrap()
+        .args(["start", "s1", "--path"])
+        .arg(repo.path())
         .env("BELLJAR_DATA_DIR", data.path())
-        .assert().success();
+        .assert()
+        .success();
 
     // open attaches
-    Command::cargo_bin("belljar").unwrap()
-        .args(["open", "s1"]) 
+    Command::cargo_bin("belljar")
+        .unwrap()
+        .args(["open", "s1"])
         .env("BELLJAR_DATA_DIR", data.path())
-        .env("PATH", prepend_path(&shim_dir.path().to_path_buf()))
-        .assert().success();
+        .env("PATH", prepend_path(shim_dir.path()))
+        .assert()
+        .success();
 
     // send a command
-    Command::cargo_bin("belljar").unwrap()
-        .args(["send", "s1", "echo", "hi"]) 
+    Command::cargo_bin("belljar")
+        .unwrap()
+        .args(["send", "s1", "echo", "hi"])
         .env("BELLJAR_DATA_DIR", data.path())
-        .env("PATH", prepend_path(&shim_dir.path().to_path_buf()))
-        .assert().success();
+        .env("PATH", prepend_path(shim_dir.path()))
+        .assert()
+        .success();
 
     let logged = fs::read_to_string(&log).unwrap();
     assert!(logged.contains("attach-session"));
@@ -75,17 +100,22 @@ fn control_center_creates_windows() {
 
     // two sessions
     for s in ["s1", "s2"] {
-        Command::cargo_bin("belljar").unwrap()
-            .args(["start", s, "--path"]).arg(repo.path())
+        Command::cargo_bin("belljar")
+            .unwrap()
+            .args(["start", s, "--path"])
+            .arg(repo.path())
             .env("BELLJAR_DATA_DIR", data.path())
-            .assert().success();
+            .assert()
+            .success();
     }
 
-    Command::cargo_bin("belljar").unwrap()
+    Command::cargo_bin("belljar")
+        .unwrap()
         .arg("control-center")
         .env("BELLJAR_DATA_DIR", data.path())
-        .env("PATH", prepend_path(&shim_dir.path().to_path_buf()))
-        .assert().success();
+        .env("PATH", prepend_path(shim_dir.path()))
+        .assert()
+        .success();
 
     let logged = fs::read_to_string(&log).unwrap();
     assert!(logged.contains("new-session"));
@@ -101,22 +131,29 @@ fn workspace_placeholder_and_rm_all() {
 
     // create two sessions
     for s in ["a", "b"] {
-        Command::cargo_bin("belljar").unwrap()
-            .args(["start", s, "--path"]).arg(repo.path())
+        Command::cargo_bin("belljar")
+            .unwrap()
+            .args(["start", s, "--path"])
+            .arg(repo.path())
             .env("BELLJAR_DATA_DIR", data.path())
-            .assert().success();
+            .assert()
+            .success();
     }
 
     // workspace placeholder
-    Command::cargo_bin("belljar").unwrap()
-        .args(["workspace", "ls"]) 
+    Command::cargo_bin("belljar")
+        .unwrap()
+        .args(["workspace", "ls"])
         .env("BELLJAR_DATA_DIR", data.path())
-        .assert().success();
+        .assert()
+        .success();
 
     // rm all
-    Command::cargo_bin("belljar").unwrap()
-        .args(["rm", "all"]) 
+    Command::cargo_bin("belljar")
+        .unwrap()
+        .args(["rm", "all"])
         .env("BELLJAR_DATA_DIR", data.path())
-        .assert().success()
+        .assert()
+        .success()
         .stdout(predicate::str::contains("removed a").and(predicate::str::contains("removed b")));
 }
