@@ -85,7 +85,29 @@ fn main() -> anyhow::Result<()> {
             }
         }
         Commands::Checkout { target, path, label } => {
-            println!("par checkout {} -- path={:?} label={:?}", target, path, label);
+            let repo = resolve_repo_path(path.as_deref())?;
+            let label = label.unwrap_or_else(|| target.clone());
+            let mut session = par_core::create_session(&label, &repo, Some(target.clone()), vec![])
+                .map_err(|e| anyhow::anyhow!("create session failed: {e}"))?;
+            if par_core::git::is_git_repo(&repo) {
+                match par_core::git::ensure_worktree(&repo, &label, &Some(target.clone())) {
+                    Ok(wt) => {
+                        par_core::git::set_session_worktree(&mut session, wt).ok();
+                    }
+                    Err(e) => eprintln!("warning: worktree setup failed: {e}"),
+                }
+            }
+            match par_core::compose::up(&session) {
+                Ok(()) => println!(
+                    "checked out: {} -> {} (project: {}) [compose up]",
+                    label, target, session.compose_project
+                ),
+                Err(par_core::CoreError::NoComposeFiles) => println!(
+                    "checked out: {} -> {} (project: {}); no compose files found, skipping",
+                    label, target, session.compose_project
+                ),
+                Err(e) => eprintln!("warning: compose up failed: {e}"),
+            }
         }
         Commands::Ls => {
             let reg = par_core::load_registry()

@@ -57,7 +57,7 @@ Deliverables:
 ## Phase 4 — Repo, Worktree, and Tmux — [IN PROGRESS]
 1. Implement `start` to create a worktree and branch, initialize session registry, and launch tmux session.
    - tmux `open` and `send` implemented; worktree/branch creation pending.
-2. Implement `checkout` to attach to existing branches/PRs per par behavior. [PENDING]
+2. Implement `checkout` to attach to existing branches (branch name only for MVP). [DONE]
 3. Implement `control-center` with tmux panes/windows. [PENDING]
 
 ## Phase 5 — Testing and CI — [PENDING]
