@@ -12,9 +12,11 @@
 - `belljar rm <label|all>`
 - `belljar send <label|all> <command...>`
 - `belljar control-center`
-- `belljar workspace <subcmd>` where subcmds include:
+- `belljar workspace <subcmd>`: workspace (multi-repo) management
+  - `ls` — list workspaces
   - `start <label> [--path <root>] [--repos r1,r2] [--open]`
-  - `code <label>` | `open <label>` | `rm <label>` | `ls`
+  - `open <label>` — ensure/attach tmux session
+  - `rm <label>` — remove workspace by label or id
 
 Notes
 - We will initially implement sessions: `start`, `ls`, `open`, `rm` and `send` with minimal functionality, then add `checkout`, `control-center`, and `workspace`.
@@ -49,3 +51,10 @@ Notes
 - Windows support.
 - Complex PR checkout flows.
 - Multi-repo workspace orchestration.
+## Workspace Model
+- id: UUID4
+- label: unique string
+- root_path: absolute path to workspace root
+- repos: absolute paths to member repos (optional list)
+- tmux_session: name used for tmux (e.g., `ws-<label>`)
+- created_at: RFC3339 timestamp

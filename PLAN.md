@@ -71,12 +71,12 @@ Deliverables:
 Deliverables:
 - Green CI for non-Docker paths; documented local flow for Docker tests.
 
-## Phase 6 — UX Polish & Docs — [PENDING]
-1. Human-friendly logs (task prefixes, colors, timing) and `--json` for machine parsing.
-2. Errors with suggestions; `par-rs doctor` for environment diagnostics.
+## Phase 6 — UX Polish & Docs — [IN PROGRESS]
+1. Human-friendly logs (task prefixes, colors, timing) and `--json` for machine parsing. [PENDING]
+2. Errors with suggestions; `belljar doctor` for environment diagnostics. [PENDING]
 3. Documentation:
-   - Quickstart, config reference, examples with popular stacks.
-   - How isolation works; performance tips; cleanup commands.
+   - Quickstart, config reference, examples with popular stacks. [IN PROGRESS]
+   - How isolation works; performance tips; cleanup commands. [PENDING]
 
 Deliverables:
 - `README.md` and `docs/` with examples and troubleshooting.
@@ -93,7 +93,7 @@ M2: Registry + compose discovery + up/down — DONE
 M3: tmux open/send for sessions — DONE
 M4: Repo worktree/branch creation + checkout — DONE
 M5: Tests + CI (coverage) — IN PROGRESS
-M6: Docs + examples + 0.1 release — PENDING
+M6: Docs + examples + 0.1 release — IN PROGRESS
 M7: Dogfood belljar to develop itself — PENDING
 
 ## Open Questions / To Validate

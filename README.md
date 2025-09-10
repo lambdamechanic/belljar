@@ -18,6 +18,11 @@ A Rust CLI inspired by coplane/par for managing development sessions and worktre
 - Open and send commands (tmux):
   - `cargo run -p par-cli -- open my-feature`
   - `cargo run -p par-cli -- send my-feature "make test"`
+- Workspaces (multi-repo context):
+  - List: `cargo run -p par-cli -- workspace ls`
+  - Create: `cargo run -p par-cli -- workspace start dev-ws --path . --repos frontend,backend --open`
+  - Open: `cargo run -p par-cli -- workspace open dev-ws`
+  - Remove: `cargo run -p par-cli -- workspace rm dev-ws`
 - List and remove sessions:
   - `cargo run -p par-cli -- ls`
   - `cargo run -p par-cli -- rm my-feature` or `rm all`
@@ -26,3 +31,4 @@ Notes
 - Compose discovery is repo-owned: belljar never ships service templates.
 - If tmux is not installed, open prints a fallback path; send will fail gracefully.
 - Worktrees are stored under `.belljar/worktrees/` and are ignored by git.
+- Workspaces are recorded in the registry and open a dedicated tmux session (named `ws-<label>`).
