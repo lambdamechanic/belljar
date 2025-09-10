@@ -334,6 +334,16 @@ fn main() -> anyhow::Result<()> {
                     {
                         eprintln!("failed to ensure workspace session: {e}");
                     }
+                    for repo in &ws.repos {
+                        let name = repo
+                            .file_name()
+                            .map(|s| s.to_string_lossy().to_string())
+                            .unwrap_or_else(|| repo.display().to_string());
+                        if let Err(e) = par_core::tmux::new_window(&ws.tmux_session, &name, repo) {
+                            eprintln!("failed to create window for {name}: {e}");
+                        }
+                    }
+                    let _ = par_core::tmux::select_layout(&ws.tmux_session, "tiled");
                     if let Err(e) = par_core::tmux::attach(&ws.tmux_session) {
                         eprintln!("failed to attach workspace: {e}");
                     }
