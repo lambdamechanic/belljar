@@ -37,7 +37,8 @@
 - Keep changes scoped; update docs/examples when interfaces or flags change.
 - Before opening a PR: ensure formatting and linting are clean.
   - Format: `cargo fmt --all` (no diffs).
-  - Lint: `cargo clippy --all-targets --all-features -D warnings` (zero warnings).
+  - Lint: `cargo clippy --all-targets --all-features -- -D warnings` (zero warnings).
+  - Annotate PLAN stage in PR title or body (e.g., `Phase 6 — Docs polish`) and list PLAN items addressed.
 
 ## Plan-Driven Workflow
 - Always work from `PLAN.md` as the single source of truth.
