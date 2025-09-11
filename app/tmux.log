@@ -1,7 +1,0 @@
-has-session -t ws-dev-ws
-attach-session -t ws-dev-ws
-has-session -t ws-dev-ws
-new-window -t ws-dev-ws -n frontend -c /tmp/.tmp8qySV5/frontend
-new-window -t ws-dev-ws -n backend -c /tmp/.tmp8qySV5/backend
-select-layout -t ws-dev-ws tiled
-attach-session -t ws-dev-ws
