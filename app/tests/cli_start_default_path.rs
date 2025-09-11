@@ -1,7 +1,7 @@
 use assert_cmd::prelude::*;
+use std::fs;
 use std::process::Command;
 use tempfile::TempDir;
-use std::fs;
 
 #[test]
 fn start_uses_current_dir_when_path_missing() {

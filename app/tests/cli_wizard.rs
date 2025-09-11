@@ -15,12 +15,7 @@ fn wizard_creates_dockerfiles_rust_codex() {
         .stdout(Stdio::piped())
         .spawn()
         .unwrap();
-    child
-        .stdin
-        .as_mut()
-        .unwrap()
-        .write_all(b"1\n1\n")
-        .unwrap();
+    child.stdin.as_mut().unwrap().write_all(b"1\n1\n").unwrap();
     let out = child.wait_with_output().unwrap();
     assert!(out.status.success());
 
@@ -47,12 +42,7 @@ fn wizard_creates_dockerfiles_python_aider() {
         .stdout(Stdio::piped())
         .spawn()
         .unwrap();
-    child
-        .stdin
-        .as_mut()
-        .unwrap()
-        .write_all(b"2\n4\n")
-        .unwrap();
+    child.stdin.as_mut().unwrap().write_all(b"2\n4\n").unwrap();
     let out = child.wait_with_output().unwrap();
     assert!(out.status.success());
 
@@ -79,12 +69,7 @@ fn wizard_respects_overwrite_prompt() {
             .stdout(Stdio::piped())
             .spawn()
             .unwrap();
-        child
-            .stdin
-            .as_mut()
-            .unwrap()
-            .write_all(b"1\n1\n")
-            .unwrap();
+        child.stdin.as_mut().unwrap().write_all(b"1\n1\n").unwrap();
         let out = child.wait_with_output().unwrap();
         assert!(out.status.success());
     }

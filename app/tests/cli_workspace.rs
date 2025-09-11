@@ -36,12 +36,7 @@ fn workspace_start_open_and_rm() {
     // start workspace and open
     Command::cargo_bin("belljar")
         .unwrap()
-        .args([
-            "workspace",
-            "start",
-            "dev-ws",
-            "--path",
-        ])
+        .args(["workspace", "start", "dev-ws", "--path"])
         .arg(root.path())
         .args(["--repos", "frontend,backend", "--open"])
         .env("BELLJAR_DATA_DIR", data.path())
@@ -77,4 +72,3 @@ fn workspace_start_open_and_rm() {
         .success()
         .stdout(predicate::str::contains("removed workspace dev-ws"));
 }
-

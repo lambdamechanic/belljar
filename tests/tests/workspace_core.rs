@@ -35,4 +35,3 @@ fn workspace_crud_roundtrip() {
     assert!(removed.is_some());
     assert!(par_core::list_workspaces().unwrap().is_empty());
 }
-
