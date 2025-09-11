@@ -36,6 +36,7 @@ fn rm_single_down_failure_warns() {
         .args(["start", "s1", "--path"])
         .arg(repo.path())
         .env("BELLJAR_DATA_DIR", data.path())
+        .env("PATH", prepend_path(shim_dir.path()))
         .assert()
         .success();
 

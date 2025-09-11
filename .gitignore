@@ -8,3 +8,5 @@ target/
 dist/
 /.fleet/
 /.belljar/worktrees/
+tmux.log
+**/tmux.log

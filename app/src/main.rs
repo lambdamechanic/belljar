@@ -426,8 +426,8 @@ fn run_wizard() -> anyhow::Result<()> {
     write_with_prompt(&cwd.join(ai_filename), ai_contents.as_bytes())?;
 
     println!("\nDone. Generated:");
-    println!("  - {}", lang_filename);
-    println!("  - {}", ai_filename);
+    println!("  - {lang_filename}");
+    println!("  - {ai_filename}");
     println!(
         "\nTip: add compose files under .belljar/compose/ to wire these into belljar sessions."
     );
@@ -448,7 +448,7 @@ fn prompt_language() -> anyhow::Result<Language> {
             "1" | "r" | "rust" => return Ok(Language::Rust),
             "2" | "p" | "py" | "python" => return Ok(Language::Python),
             _ => {
-                println!("Invalid choice: {}\n", s);
+                println!("Invalid choice: {s}\n");
             }
         }
     }
@@ -471,7 +471,7 @@ fn prompt_ai() -> anyhow::Result<AiCoder> {
             "2" | "claude" => return Ok(AiCoder::Claude),
             "3" | "goose" => return Ok(AiCoder::Goose),
             "4" | "aider" => return Ok(AiCoder::Aider),
-            _ => println!("Invalid choice: {}\n", s),
+            _ => println!("Invalid choice: {s}\n"),
         }
     }
 }
