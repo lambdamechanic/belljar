@@ -6,26 +6,26 @@ A Rust CLI inspired by coplane/par for managing development sessions and worktre
 - Prepare your repo (one-time):
   - Add compose files in `.belljar/compose/*.yml` or a `docker-compose.yml` at repo root.
 - Build CLI:
-  - `cargo build` (workspace) or run via `cargo run -p par-cli -- --help`.
+  - `cargo build` (workspace) or run via `cargo run -p belljar -- --help`.
 - Start a session:
-  - `cargo run -p par-cli -- start my-feature --path .`
+  - `cargo run -p belljar -- start my-feature --path .`
   - If compose files are present, belljar runs `docker compose -p <project> up -d`.
 - Checkout a branch into a session:
-  - `cargo run -p par-cli -- checkout feature-x --path . --label fx`
+  - `cargo run -p belljar -- checkout feature-x --path . --label fx`
   - Creates a git worktree at `.belljar/worktrees/fx` and records the session.
 - Tests (unit + integration): `cargo test`.
 - Property tests: proptest is preferred for pure logic. Default cases are modest. Increase cases for a smoke run: `PROPTEST_CASES=1000 cargo test`.
 - Open and send commands (tmux):
-  - `cargo run -p par-cli -- open my-feature`
-  - `cargo run -p par-cli -- send my-feature "make test"`
+  - `cargo run -p belljar -- open my-feature`
+  - `cargo run -p belljar -- send my-feature "make test"`
 - Workspaces (multi-repo context):
-  - List: `cargo run -p par-cli -- workspace ls`
-  - Create: `cargo run -p par-cli -- workspace start dev-ws --path . --repos frontend,backend --open`
-  - Open: `cargo run -p par-cli -- workspace open dev-ws`
-  - Remove: `cargo run -p par-cli -- workspace rm dev-ws`
+  - List: `cargo run -p belljar -- workspace ls`
+  - Create: `cargo run -p belljar -- workspace start dev-ws --path . --repos frontend,backend --open`
+  - Open: `cargo run -p belljar -- workspace open dev-ws`
+  - Remove: `cargo run -p belljar -- workspace rm dev-ws`
 - List and remove sessions:
-  - `cargo run -p par-cli -- ls`
-  - `cargo run -p par-cli -- rm my-feature` or `rm all`
+  - `cargo run -p belljar -- ls`
+  - `cargo run -p belljar -- rm my-feature` or `rm all`
 
 Notes
 - Compose discovery is repo-owned: belljar never ships service templates.
