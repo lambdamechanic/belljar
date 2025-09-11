@@ -34,6 +34,20 @@
 ## Commit & Pull Request Guidelines
 - Use Conventional Commits: `feat:`, `fix:`, `docs:`, `refactor:`, `test:`, `build:`, `ci:`, `chore:`.
 - PRs: include summary, rationale, linked issues, and usage notes; attach logs or screenshots when UX changes.
+- PR body authoring: use a heredoc + file and pass it to the GitHub CLI via `--body-file` (or equivalent) instead of inlining newlines in a quoted string. This avoids literal `\n` showing up on GitHub.
+  Example:
+  ```bash
+  cat > /tmp/pr.md <<'EOF'
+  ### Summary
+
+  - Change 1
+  - Change 2
+
+  ### Rationale
+  Explain why.
+  EOF
+  gh pr create --title "feat: something" --body-file /tmp/pr.md --base main --head my-branch
+  ```
 - Keep changes scoped; update docs/examples when interfaces or flags change.
 - Before opening a PR: ensure formatting and linting are clean.
   - Format: `cargo fmt --all` (no diffs).
