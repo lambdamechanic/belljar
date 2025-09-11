@@ -12,7 +12,7 @@
   - `core/` — library crate for repo/worktree management, tmux control, and docker-compose integration.
   - `tests/` — integration/e2e tests spanning the workspace (Rust integration tests; optional Docker-gated tests).
 - Session isolation via `docker compose -p <unique_session>` to namespace networks, volumes, and containers.
-- Config-driven services come from the target repository's compose files. belljar discovers `.belljar/compose/*.yml` or `docker-compose.yml|yaml`/`compose.yml|yaml` in the repo; no built-in templates.
+- Config-driven services come from the target repository's compose files. belljar discovers `.belljar/compose/*.yml` or `docker-compose.yml|yaml`/`compose.yml|yaml` in the repo; no built-in templates. A lightweight `wizard` subcommand can scaffold starter Dockerfiles into the repo (users own/edit them).
 
 ## Phase 0 — Recon and Spec — [DONE]
 1. Review `coplane/par` repository to enumerate:
@@ -77,6 +77,7 @@ Deliverables:
 3. Documentation:
    - Quickstart, config reference, examples with popular stacks. [IN PROGRESS]
    - How isolation works; performance tips; cleanup commands. [PENDING]
+4. Interactive scaffolding: `belljar wizard` prompts for language (Rust/Python) and AI coder (Codex/Claude/Goose/Aider), generating `Dockerfile` and `Dockerfile.ai` with safe overwrite prompts. [DONE]
 
 Deliverables:
 - `README.md` and `docs/` with examples and troubleshooting.
@@ -94,6 +95,7 @@ M3: tmux open/send for sessions — DONE
 M4: Repo worktree/branch creation + checkout — DONE
 M5: Tests + CI (coverage) — IN PROGRESS
 M6: Docs + examples + 0.1 release — IN PROGRESS
+    - Includes the `wizard` scaffolding command for quickstarts. [DONE]
 M7: Dogfood belljar to develop itself — PENDING
 
 ## Open Questions / To Validate
