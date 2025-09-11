@@ -1,4 +1,6 @@
 use clap::{Args, Parser, Subcommand};
+use std::fs;
+use std::io::{self, Write};
 use std::path::Path;
 use std::path::PathBuf;
 
@@ -45,6 +47,8 @@ enum Commands {
     },
     /// Print internal version details
     Version,
+    /// Run an interactive setup wizard to scaffold Dockerfiles
+    Wizard,
 }
 
 #[derive(Args, Debug)]
@@ -364,6 +368,9 @@ fn main() -> anyhow::Result<()> {
                 par_core::version()
             );
         }
+        Commands::Wizard => {
+            run_wizard()?;
+        }
     }
     Ok(())
 }
@@ -377,4 +384,277 @@ fn resolve_repo_path(path: Option<&Path>) -> anyhow::Result<PathBuf> {
         anyhow::bail!("path does not exist: {}", p.display());
     }
     Ok(p)
+}
+
+#[derive(Debug, Clone, Copy)]
+enum Language {
+    Rust,
+    Python,
+}
+
+#[derive(Debug, Clone, Copy)]
+enum AiCoder {
+    Codex,
+    Claude,
+    Goose,
+    Aider,
+}
+
+fn run_wizard() -> anyhow::Result<()> {
+    println!("belljar wizard — scaffold Dockerfiles for your project\n");
+    let lang = prompt_language()?;
+    let ai = prompt_ai()?;
+
+    let cwd = std::env::current_dir()?;
+    println!("\nScaffolding in {}", cwd.display());
+
+    // Language-specific Dockerfile
+    let (lang_filename, lang_contents) = match lang {
+        Language::Rust => ("Dockerfile", rust_dockerfile_template()),
+        Language::Python => ("Dockerfile", python_dockerfile_template()),
+    };
+
+    // AI helper Dockerfile
+    let (ai_filename, ai_contents) = match ai {
+        AiCoder::Codex => ("Dockerfile.ai", ai_codex_dockerfile_template()),
+        AiCoder::Claude => ("Dockerfile.ai", ai_claude_dockerfile_template()),
+        AiCoder::Goose => ("Dockerfile.ai", ai_goose_dockerfile_template()),
+        AiCoder::Aider => ("Dockerfile.ai", ai_aider_dockerfile_template()),
+    };
+
+    write_with_prompt(&cwd.join(lang_filename), lang_contents.as_bytes())?;
+    write_with_prompt(&cwd.join(ai_filename), ai_contents.as_bytes())?;
+
+    println!("\nDone. Generated:");
+    println!("  - {}", lang_filename);
+    println!("  - {}", ai_filename);
+    println!(
+        "\nTip: add compose files under .belljar/compose/ to wire these into belljar sessions."
+    );
+    Ok(())
+}
+
+fn prompt_language() -> anyhow::Result<Language> {
+    loop {
+        println!("Choose language:");
+        println!("  1) Rust");
+        println!("  2) Python");
+        print!("Enter choice [1/2]: ");
+        io::stdout().flush()?;
+        let mut buf = String::new();
+        io::stdin().read_line(&mut buf)?;
+        let s = buf.trim().to_lowercase();
+        match s.as_str() {
+            "1" | "r" | "rust" => return Ok(Language::Rust),
+            "2" | "p" | "py" | "python" => return Ok(Language::Python),
+            _ => {
+                println!("Invalid choice: {}\n", s);
+            }
+        }
+    }
+}
+
+fn prompt_ai() -> anyhow::Result<AiCoder> {
+    loop {
+        println!("Choose AI coder:");
+        println!("  1) Codex");
+        println!("  2) Claude");
+        println!("  3) Goose");
+        println!("  4) Aider");
+        print!("Enter choice [1-4]: ");
+        io::stdout().flush()?;
+        let mut buf = String::new();
+        io::stdin().read_line(&mut buf)?;
+        let s = buf.trim().to_lowercase();
+        match s.as_str() {
+            "1" | "codex" => return Ok(AiCoder::Codex),
+            "2" | "claude" => return Ok(AiCoder::Claude),
+            "3" | "goose" => return Ok(AiCoder::Goose),
+            "4" | "aider" => return Ok(AiCoder::Aider),
+            _ => println!("Invalid choice: {}\n", s),
+        }
+    }
+}
+
+fn write_with_prompt(path: &Path, contents: &[u8]) -> anyhow::Result<()> {
+    if path.exists() {
+        println!("{} already exists.", path.display());
+        loop {
+            print!("Overwrite? [y/N]: ");
+            io::stdout().flush()?;
+            let mut ans = String::new();
+            io::stdin().read_line(&mut ans)?;
+            let a = ans.trim().to_lowercase();
+            match a.as_str() {
+                "y" | "yes" => {
+                    fs::write(path, contents)?;
+                    println!("Overwrote {}", path.display());
+                    break;
+                }
+                "n" | "no" | "" => {
+                    println!("Skipped {}", path.display());
+                    break;
+                }
+                _ => println!("Please answer 'y' or 'n'."),
+            }
+        }
+    } else {
+        if let Some(parent) = path.parent() {
+            fs::create_dir_all(parent)?;
+        }
+        fs::write(path, contents)?;
+        println!("Created {}", path.display());
+    }
+    Ok(())
+}
+
+fn rust_dockerfile_template() -> String {
+    let t = r#"# syntax=docker/dockerfile:1
+FROM rust:1-bookworm AS base
+
+WORKDIR /workspace
+
+# Common native deps (adjust as needed)
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+       build-essential pkg-config libssl-dev ca-certificates curl git \
+    && rm -rf /var/lib/apt/lists/*
+
+# Optionally pre-build deps for faster iterative builds
+# COPY Cargo.toml Cargo.lock ./
+# RUN mkdir -p src && echo "fn main(){}" > src/main.rs \
+#     && cargo build --release \
+#     && rm -rf src
+
+# Bring in your code
+COPY . .
+
+# Build command example:
+# RUN cargo build --release
+
+CMD ["bash"]
+"#;
+    t.to_string()
+}
+
+fn python_dockerfile_template() -> String {
+    let t = r#"# syntax=docker/dockerfile:1
+FROM python:3.11-slim AS base
+
+ENV PIP_NO_CACHE_DIR=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1
+
+WORKDIR /workspace
+
+# System deps (adjust as needed)
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+       build-essential git curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install app deps if present
+COPY requirements*.txt ./
+RUN if ls requirements*.txt >/dev/null 2>&1; then \
+      pip install -r requirements.txt || true; \
+    fi
+
+# Bring in your code
+COPY . .
+
+CMD ["bash"]
+"#;
+    t.to_string()
+}
+
+fn ai_codex_dockerfile_template() -> String {
+    let t = r#"# Helper container for using OpenAI Codex-like workflows
+FROM python:3.11-slim
+
+WORKDIR /workspace
+
+ENV PIP_NO_CACHE_DIR=1
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends git curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Libraries commonly used to interface with OpenAI APIs
+RUN pip install --no-cache-dir openai tiktoken
+
+# Set your credentials at runtime or via compose env_file
+# ENV OPENAI_API_KEY=...
+
+CMD ["bash"]
+"#;
+    t.to_string()
+}
+
+fn ai_claude_dockerfile_template() -> String {
+    let t = r#"# Helper container for using Claude (Anthropic) workflows
+FROM python:3.11-slim
+
+WORKDIR /workspace
+
+ENV PIP_NO_CACHE_DIR=1
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends git curl \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN pip install --no-cache-dir anthropic
+
+# Set your credentials at runtime or via compose env_file
+# ENV ANTHROPIC_API_KEY=...
+
+CMD ["bash"]
+"#;
+    t.to_string()
+}
+
+fn ai_goose_dockerfile_template() -> String {
+    let t = r#"# Helper container for using Goose workflows
+FROM python:3.11-slim
+
+WORKDIR /workspace
+
+ENV PIP_NO_CACHE_DIR=1
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends git curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# There are multiple 'goose' projects; adjust as needed
+# This installs the GooseAI Python SDK as a reasonable default
+RUN pip install --no-cache-dir gooseai
+
+# Provide credentials as env vars
+# ENV GOOSEAI_API_KEY=...
+
+CMD ["bash"]
+"#;
+    t.to_string()
+}
+
+fn ai_aider_dockerfile_template() -> String {
+    let t = r#"# Helper container for using Aider (CLI AI pair programmer)
+FROM python:3.11-slim
+
+WORKDIR /workspace
+
+ENV PIP_NO_CACHE_DIR=1
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends git curl \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN pip install --no-cache-dir aider-chat
+
+# Aider supports multiple backends; set the one you use
+# ENV OPENAI_API_KEY=...
+# ENV ANTHROPIC_API_KEY=...
+
+CMD ["bash"]
+"#;
+    t.to_string()
 }
