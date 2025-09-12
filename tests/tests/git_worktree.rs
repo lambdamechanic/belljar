@@ -50,7 +50,7 @@ fn git_worktree_creates_dir() {
         .success());
 
     // ensure worktree
-    let wt =
-        par_core::git::ensure_worktree(repo, "wt-test", &Some("wt-test".into())).expect("worktree");
+    let wt = belljar_core::git::ensure_worktree(repo, "wt-test", &Some("wt-test".into()))
+        .expect("worktree");
     assert!(wt.exists(), "worktree path should exist");
 }

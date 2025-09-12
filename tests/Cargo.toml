@@ -1,11 +1,11 @@
 [package]
-name = "par-tests"
+name = "belljar-test"
 version = "0.1.0"
 edition = "2021"
 publish = false
 
 [dev-dependencies]
-par-core = { path = "../core", features = ["testing"] }
+belljar-core = { path = "../core", features = ["testing"] }
 proptest = "1.5"
 tempfile = "3.10"
 assert_cmd = "2.0"

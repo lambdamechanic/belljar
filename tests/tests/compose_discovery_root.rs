@@ -13,7 +13,7 @@ fn compose_discovery_falls_back_to_root() {
     // .belljar/compose exists but is empty
     std::fs::create_dir_all(repo.join(".belljar/compose")).unwrap();
 
-    let files = par_core::compose::discover_files_for_repo(repo);
+    let files = belljar_core::compose::discover_files_for_repo(repo);
     let names: Vec<_> = files
         .iter()
         .map(|p| p.file_name().unwrap().to_string_lossy().to_string())

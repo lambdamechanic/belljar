@@ -22,7 +22,7 @@ fn tmux_helpers_call_binary() {
     std::env::set_var("PATH", prepend_path(shim_dir.path()));
 
     // Minimal session
-    let s = par_core::Session {
+    let s = belljar_core::Session {
         id: "id".into(),
         label: "lab".into(),
         repo_path: std::env::current_dir().unwrap(),
@@ -34,11 +34,11 @@ fn tmux_helpers_call_binary() {
         created_at: "now".into(),
     };
 
-    par_core::tmux::ensure_session(&s).unwrap();
-    par_core::tmux::new_window(&s.tmux_session, "w1", &s.repo_path).unwrap();
-    par_core::tmux::select_layout(&s.tmux_session, "tiled").unwrap();
+    belljar_core::tmux::ensure_session(&s).unwrap();
+    belljar_core::tmux::new_window(&s.tmux_session, "w1", &s.repo_path).unwrap();
+    belljar_core::tmux::select_layout(&s.tmux_session, "tiled").unwrap();
     // attach too
-    par_core::tmux::attach(&s.tmux_session).unwrap();
+    belljar_core::tmux::attach(&s.tmux_session).unwrap();
 
     let logged = fs::read_to_string(&log).unwrap();
     assert!(logged.contains("has-session"));

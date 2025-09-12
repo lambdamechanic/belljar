@@ -30,12 +30,12 @@ Notes
 - repo_path: absolute path to git repository.
 - branch: branch/PR info.
 - worktree_path: path to created worktree.
-- compose_project: `parrs_<shortid>`; stored to allow cleanup.
+- compose_project: `belljar_<shortid>`; stored to allow cleanup.
 - services: list of enabled services.
 - tmux_session: tmux session name (derived from label).
 
 ## Storage
-- Registry at `~/.local/share/par-rs/registry.json` (or platform-appropriate dir) tracks sessions and workspaces.
+- Registry at `~/.local/share/belljar/registry.json` (or platform-appropriate dir) tracks sessions and workspaces.
 
 ## Compose Isolation
 - Project-scoped: `docker compose -p <project> [-f files...] up -d`. Files come from the repo as described above.
