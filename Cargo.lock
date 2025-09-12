@@ -95,10 +95,36 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "assert_cmd",
+ "belljar-core",
  "clap",
  "dirs",
- "par-core",
  "predicates",
+ "tempfile",
+]
+
+[[package]]
+name = "belljar-core"
+version = "0.1.0"
+dependencies = [
+ "directories",
+ "once_cell",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "thiserror",
+ "time",
+ "uuid",
+ "which",
+]
+
+[[package]]
+name = "belljar-test"
+version = "0.1.0"
+dependencies = [
+ "assert_cmd",
+ "belljar-core",
+ "predicates",
+ "proptest",
  "tempfile",
 ]
 
@@ -424,32 +450,6 @@ name = "option-ext"
 version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "04744f49eae99ab78e0d5c0b603ab218f515ea8cfe5a456d7629ad883a3b6e7d"
-
-[[package]]
-name = "par-core"
-version = "0.1.0"
-dependencies = [
- "directories",
- "once_cell",
- "serde",
- "serde_json",
- "tempfile",
- "thiserror",
- "time",
- "uuid",
- "which",
-]
-
-[[package]]
-name = "par-tests"
-version = "0.1.0"
-dependencies = [
- "assert_cmd",
- "par-core",
- "predicates",
- "proptest",
- "tempfile",
-]
 
 [[package]]
 name = "powerfmt"

@@ -21,7 +21,7 @@ fn compose_up_error() {
     let orig_path = std::env::var("PATH").unwrap_or_default();
 
     let data = TempDir::new().unwrap();
-    par_core::set_data_dir_override_for_testing(data.path());
+    belljar_core::set_data_dir_override_for_testing(data.path());
     let repo = TempDir::new().unwrap();
     // root compose present
     fs::write(
@@ -31,7 +31,7 @@ fn compose_up_error() {
     .unwrap();
 
     // create session with real docker
-    let s = par_core::create_session("t", repo.path(), None, vec![]).unwrap();
+    let s = belljar_core::create_session("t", repo.path(), None, vec![]).unwrap();
 
     // docker shim fails
     let shim_dir = TempDir::new().unwrap();
@@ -42,8 +42,8 @@ fn compose_up_error() {
     fs::set_permissions(&shim, perm).unwrap();
     std::env::set_var("PATH", prepend_path(shim_dir.path()));
 
-    match par_core::compose::up(&s) {
-        Err(par_core::CoreError::Compose(_)) => {}
+    match belljar_core::compose::up(&s) {
+        Err(belljar_core::CoreError::Compose(_)) => {}
         _ => panic!("expected compose error"),
     }
 
@@ -61,7 +61,7 @@ fn compose_down_error() {
     let orig_path = std::env::var("PATH").unwrap_or_default();
 
     let data = TempDir::new().unwrap();
-    par_core::set_data_dir_override_for_testing(data.path());
+    belljar_core::set_data_dir_override_for_testing(data.path());
     let repo = TempDir::new().unwrap();
     // root compose present
     fs::write(
@@ -71,7 +71,7 @@ fn compose_down_error() {
     .unwrap();
 
     // create session with real docker
-    let s = par_core::create_session("t", repo.path(), None, vec![]).unwrap();
+    let s = belljar_core::create_session("t", repo.path(), None, vec![]).unwrap();
 
     // docker shim fails
     let shim_dir = TempDir::new().unwrap();
@@ -82,8 +82,8 @@ fn compose_down_error() {
     fs::set_permissions(&shim, perm).unwrap();
     std::env::set_var("PATH", prepend_path(shim_dir.path()));
 
-    match par_core::compose::down(&s) {
-        Err(par_core::CoreError::Compose(_)) => {}
+    match belljar_core::compose::down(&s) {
+        Err(belljar_core::CoreError::Compose(_)) => {}
         _ => panic!("expected compose error"),
     }
 

@@ -23,7 +23,7 @@ fn new_window_and_select_layout_errors() {
     let shim_dir = make_tmux_shim();
     std::env::set_var("PATH", prepend_path(shim_dir.path()));
 
-    let s = par_core::Session {
+    let s = belljar_core::Session {
         id: "id".into(),
         label: "lab".into(),
         repo_path: std::env::current_dir().unwrap(),
@@ -36,15 +36,15 @@ fn new_window_and_select_layout_errors() {
     };
 
     // new_window should error
-    let e = par_core::tmux::new_window(&s.tmux_session, "w1", &s.repo_path).unwrap_err();
+    let e = belljar_core::tmux::new_window(&s.tmux_session, "w1", &s.repo_path).unwrap_err();
     match e {
-        par_core::CoreError::Tmux(_) => {}
+        belljar_core::CoreError::Tmux(_) => {}
         _ => panic!("unexpected error"),
     }
     // select_layout should error
-    let e = par_core::tmux::select_layout(&s.tmux_session, "tiled").unwrap_err();
+    let e = belljar_core::tmux::select_layout(&s.tmux_session, "tiled").unwrap_err();
     match e {
-        par_core::CoreError::Tmux(_) => {}
+        belljar_core::CoreError::Tmux(_) => {}
         _ => panic!("unexpected error"),
     }
 }

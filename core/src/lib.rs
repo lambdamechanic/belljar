@@ -1,4 +1,4 @@
-//! par-core: internal library for par-rs
+//! belljar-core: internal library for belljar (config, session, compose, runner)
 
 use directories::ProjectDirs;
 use once_cell::sync::Lazy;

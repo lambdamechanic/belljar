@@ -16,7 +16,7 @@ fn compose_discovery_prefers_belljar_dir() {
     std::fs::write(bj_dir.join("a.yml"), "services: {}\n").unwrap();
     std::fs::write(bj_dir.join("b.yaml"), "services: {}\n").unwrap();
 
-    let files = par_core::compose::discover_files_for_repo(repo);
+    let files = belljar_core::compose::discover_files_for_repo(repo);
     // Should include only the two files from .belljar/compose, sorted
     let mut names: Vec<_> = files
         .iter()

@@ -11,7 +11,7 @@ fn prepend_path(dir: &Path) -> String {
 #[test]
 fn compose_up_down_uses_repo_files_and_docker() {
     let data_td = TempDir::new().unwrap();
-    par_core::set_data_dir_override_for_testing(data_td.path());
+    belljar_core::set_data_dir_override_for_testing(data_td.path());
 
     // Prepare repo with .belljar/compose file
     let repo_td = TempDir::new().unwrap();
@@ -36,10 +36,10 @@ fn compose_up_down_uses_repo_files_and_docker() {
     std::env::set_var("PATH", prepend_path(shim_dir.path()));
 
     // Create a session
-    let s = par_core::create_session("t", repo, None, vec![]).unwrap();
+    let s = belljar_core::create_session("t", repo, None, vec![]).unwrap();
     // Up should succeed and call docker compose with -f pointing to our file
-    par_core::compose::up(&s).unwrap();
-    par_core::compose::down(&s).unwrap();
+    belljar_core::compose::up(&s).unwrap();
+    belljar_core::compose::down(&s).unwrap();
 
     let logged = fs::read_to_string(&log).unwrap();
     assert!(logged.contains("compose"));

@@ -90,26 +90,26 @@ fn main() -> anyhow::Result<()> {
         Commands::Start(args) => {
             let repo = resolve_repo_path(args.path.as_deref())?;
             let mut session =
-                par_core::create_session(&args.label, &repo, args.branch.clone(), vec![])
+                belljar_core::create_session(&args.label, &repo, args.branch.clone(), vec![])
                     .map_err(|e| anyhow::anyhow!("create session failed: {e}"))?;
 
             // Ensure worktree if repo is git
-            if par_core::git::is_git_repo(&repo) {
-                match par_core::git::ensure_worktree(&repo, &args.label, &args.branch) {
+            if belljar_core::git::is_git_repo(&repo) {
+                match belljar_core::git::ensure_worktree(&repo, &args.label, &args.branch) {
                     Ok(wt) => {
-                        par_core::git::set_session_worktree(&mut session, wt).ok();
+                        belljar_core::git::set_session_worktree(&mut session, wt).ok();
                     }
                     Err(e) => eprintln!("warning: worktree setup failed: {e}"),
                 }
             }
-            match par_core::compose::up(&session) {
+            match belljar_core::compose::up(&session) {
                 Ok(()) => {
                     println!(
                         "created session: {} (project: {}) [compose up]",
                         session.label, session.compose_project
                     );
                 }
-                Err(par_core::CoreError::NoComposeFiles) => {
+                Err(belljar_core::CoreError::NoComposeFiles) => {
                     println!(
                         "created session: {} (project: {}); no compose files found, skipping",
                         session.label, session.compose_project
@@ -131,22 +131,22 @@ fn main() -> anyhow::Result<()> {
         } => {
             let repo = resolve_repo_path(path.as_deref())?;
             let label = label.unwrap_or_else(|| target.clone());
-            let mut session = par_core::create_session(&label, &repo, Some(target.clone()), vec![])
+            let mut session = belljar_core::create_session(&label, &repo, Some(target.clone()), vec![])
                 .map_err(|e| anyhow::anyhow!("create session failed: {e}"))?;
-            if par_core::git::is_git_repo(&repo) {
-                match par_core::git::ensure_worktree(&repo, &label, &Some(target.clone())) {
+            if belljar_core::git::is_git_repo(&repo) {
+                match belljar_core::git::ensure_worktree(&repo, &label, &Some(target.clone())) {
                     Ok(wt) => {
-                        par_core::git::set_session_worktree(&mut session, wt).ok();
+                        belljar_core::git::set_session_worktree(&mut session, wt).ok();
                     }
                     Err(e) => eprintln!("warning: worktree setup failed: {e}"),
                 }
             }
-            match par_core::compose::up(&session) {
+            match belljar_core::compose::up(&session) {
                 Ok(()) => println!(
                     "checked out: {} -> {} (project: {}) [compose up]",
                     label, target, session.compose_project
                 ),
-                Err(par_core::CoreError::NoComposeFiles) => println!(
+                Err(belljar_core::CoreError::NoComposeFiles) => println!(
                     "checked out: {} -> {} (project: {}); no compose files found, skipping",
                     label, target, session.compose_project
                 ),
@@ -154,7 +154,7 @@ fn main() -> anyhow::Result<()> {
             }
         }
         Commands::Ls => {
-            let reg = par_core::load_registry()
+            let reg = belljar_core::load_registry()
                 .map_err(|e| anyhow::anyhow!("load registry failed: {e}"))?;
             if reg.sessions.is_empty() {
                 println!("no sessions");
@@ -170,14 +170,14 @@ fn main() -> anyhow::Result<()> {
             }
         }
         Commands::Open { label } => {
-            match par_core::find_session(&label) {
+            match belljar_core::find_session(&label) {
                 Ok(Some(s)) => {
-                    match par_core::tmux::ensure_session(&s) {
+                    match belljar_core::tmux::ensure_session(&s) {
                         Ok(()) => {
                             // Try to attach. If tmux not found, provide guidance.
-                            match par_core::tmux::attach(&s.tmux_session) {
+                            match belljar_core::tmux::attach(&s.tmux_session) {
                                 Ok(()) => {}
-                                Err(par_core::CoreError::TmuxNotFound) => {
+                                Err(belljar_core::CoreError::TmuxNotFound) => {
                                     println!(
                                         "tmux not found; cd {} to work in this session",
                                         s.repo_path.display()
@@ -186,7 +186,7 @@ fn main() -> anyhow::Result<()> {
                                 Err(e) => eprintln!("failed to attach: {e}"),
                             }
                         }
-                        Err(par_core::CoreError::TmuxNotFound) => {
+                        Err(belljar_core::CoreError::TmuxNotFound) => {
                             println!(
                                 "tmux not found; cd {} to work in this session",
                                 s.repo_path.display()
@@ -201,24 +201,24 @@ fn main() -> anyhow::Result<()> {
         }
         Commands::Rm { target } => {
             if target == "all" {
-                let reg = par_core::load_registry()
+                let reg = belljar_core::load_registry()
                     .map_err(|e| anyhow::anyhow!("load registry failed: {e}"))?;
                 for s in reg.sessions {
-                    match par_core::compose::down(&s) {
-                        Ok(()) | Err(par_core::CoreError::NoComposeFiles) => {}
+                    match belljar_core::compose::down(&s) {
+                        Ok(()) | Err(belljar_core::CoreError::NoComposeFiles) => {}
                         Err(e) => eprintln!("warning: compose down failed for {}: {e}", s.label),
                     }
-                    let _ = par_core::remove_session(&s.label);
+                    let _ = belljar_core::remove_session(&s.label);
                     println!("removed {}", s.label);
                 }
-            } else if let Some(s) = par_core::find_session(&target)
+            } else if let Some(s) = belljar_core::find_session(&target)
                 .map_err(|e| anyhow::anyhow!("find session failed: {e}"))?
             {
-                match par_core::compose::down(&s) {
-                    Ok(()) | Err(par_core::CoreError::NoComposeFiles) => {}
+                match belljar_core::compose::down(&s) {
+                    Ok(()) | Err(belljar_core::CoreError::NoComposeFiles) => {}
                     Err(e) => eprintln!("warning: compose down failed for {}: {e}", s.label),
                 }
-                par_core::remove_session(&target)
+                belljar_core::remove_session(&target)
                     .map_err(|e| anyhow::anyhow!("remove failed: {e}"))?;
                 println!("removed {}", s.label);
             } else {
@@ -228,12 +228,12 @@ fn main() -> anyhow::Result<()> {
         Commands::Send { target, command } => {
             let cmd = command.join(" ");
             if target == "all" {
-                match par_core::load_registry() {
+                match belljar_core::load_registry() {
                     Ok(reg) => {
                         for s in reg.sessions {
-                            match par_core::tmux::ensure_session(&s) {
+                            match belljar_core::tmux::ensure_session(&s) {
                                 Ok(()) => {
-                                    if let Err(e) = par_core::tmux::send_keys(&s.tmux_session, &cmd)
+                                    if let Err(e) = belljar_core::tmux::send_keys(&s.tmux_session, &cmd)
                                     {
                                         eprintln!("send to {} failed: {e}", s.label);
                                     }
@@ -245,10 +245,10 @@ fn main() -> anyhow::Result<()> {
                     Err(e) => eprintln!("failed to load registry: {e}"),
                 }
             } else {
-                match par_core::find_session(&target) {
-                    Ok(Some(s)) => match par_core::tmux::ensure_session(&s) {
+                match belljar_core::find_session(&target) {
+                    Ok(Some(s)) => match belljar_core::tmux::ensure_session(&s) {
                         Ok(()) => {
-                            if let Err(e) = par_core::tmux::send_keys(&s.tmux_session, &cmd) {
+                            if let Err(e) = belljar_core::tmux::send_keys(&s.tmux_session, &cmd) {
                                 eprintln!("send failed: {e}");
                             }
                         }
@@ -262,31 +262,31 @@ fn main() -> anyhow::Result<()> {
         Commands::ControlCenter => {
             // Create a tmux session named "belljar-cc" with one window per session
             let cc_name = "belljar-cc";
-            match par_core::load_registry() {
+            match belljar_core::load_registry() {
                 Ok(reg) => {
                     if reg.sessions.is_empty() {
                         println!("no sessions to show");
                     } else {
                         // Use the first session's repo as the base cwd
                         let base = &reg.sessions[0].repo_path;
-                        match par_core::tmux::ensure_named_session(cc_name, base) {
+                        match belljar_core::tmux::ensure_named_session(cc_name, base) {
                             Ok(()) => {
                                 for s in reg.sessions {
                                     // Try to create a window per session label
                                     if let Err(e) =
-                                        par_core::tmux::new_window(cc_name, &s.label, &s.repo_path)
+                                        belljar_core::tmux::new_window(cc_name, &s.label, &s.repo_path)
                                     {
                                         eprintln!("failed to create window for {}: {e}", s.label);
                                     }
                                 }
                                 // Optional: choose a tiled layout
-                                let _ = par_core::tmux::select_layout(cc_name, "tiled");
+                                let _ = belljar_core::tmux::select_layout(cc_name, "tiled");
                                 // Attach to control center
-                                if let Err(e) = par_core::tmux::attach(cc_name) {
+                                if let Err(e) = belljar_core::tmux::attach(cc_name) {
                                     eprintln!("failed to attach control center: {e}");
                                 }
                             }
-                            Err(par_core::CoreError::TmuxNotFound) => {
+                            Err(belljar_core::CoreError::TmuxNotFound) => {
                                 println!("tmux not found; control-center requires tmux");
                             }
                             Err(e) => eprintln!("failed to init control center: {e}"),
@@ -297,7 +297,7 @@ fn main() -> anyhow::Result<()> {
             }
         }
         Commands::Workspace { command: ws } => match ws {
-            WorkspaceCmd::Ls => match par_core::list_workspaces() {
+            WorkspaceCmd::Ls => match belljar_core::list_workspaces() {
                 Ok(list) => {
                     if list.is_empty() {
                         println!("no workspaces");
@@ -317,24 +317,24 @@ fn main() -> anyhow::Result<()> {
             } => {
                 let root = resolve_repo_path(path.as_deref())?;
                 let repo_paths: Vec<PathBuf> = repos.into_iter().map(|r| root.join(r)).collect();
-                match par_core::create_workspace(&label, &root, repo_paths) {
+                match belljar_core::create_workspace(&label, &root, repo_paths) {
                     Ok(ws) => {
                         println!("created workspace: {}", ws.label);
                         if open {
-                            let _ = par_core::tmux::ensure_named_session(
+                            let _ = belljar_core::tmux::ensure_named_session(
                                 &ws.tmux_session,
                                 &ws.root_path,
                             );
-                            let _ = par_core::tmux::attach(&ws.tmux_session);
+                            let _ = belljar_core::tmux::attach(&ws.tmux_session);
                         }
                     }
                     Err(e) => eprintln!("failed to create workspace: {e}"),
                 }
             }
-            WorkspaceCmd::Open { label } => match par_core::find_workspace(&label) {
+            WorkspaceCmd::Open { label } => match belljar_core::find_workspace(&label) {
                 Ok(Some(ws)) => {
                     if let Err(e) =
-                        par_core::tmux::ensure_named_session(&ws.tmux_session, &ws.root_path)
+                        belljar_core::tmux::ensure_named_session(&ws.tmux_session, &ws.root_path)
                     {
                         eprintln!("failed to ensure workspace session: {e}");
                     }
@@ -343,19 +343,19 @@ fn main() -> anyhow::Result<()> {
                             .file_name()
                             .map(|s| s.to_string_lossy().to_string())
                             .unwrap_or_else(|| repo.display().to_string());
-                        if let Err(e) = par_core::tmux::new_window(&ws.tmux_session, &name, repo) {
+                        if let Err(e) = belljar_core::tmux::new_window(&ws.tmux_session, &name, repo) {
                             eprintln!("failed to create window for {name}: {e}");
                         }
                     }
-                    let _ = par_core::tmux::select_layout(&ws.tmux_session, "tiled");
-                    if let Err(e) = par_core::tmux::attach(&ws.tmux_session) {
+                    let _ = belljar_core::tmux::select_layout(&ws.tmux_session, "tiled");
+                    if let Err(e) = belljar_core::tmux::attach(&ws.tmux_session) {
                         eprintln!("failed to attach workspace: {e}");
                     }
                 }
                 Ok(None) => println!("no such workspace: {label}"),
                 Err(e) => eprintln!("failed to load registry: {e}"),
             },
-            WorkspaceCmd::Rm { target } => match par_core::remove_workspace(&target) {
+            WorkspaceCmd::Rm { target } => match belljar_core::remove_workspace(&target) {
                 Ok(Some(ws)) => println!("removed workspace {}", ws.label),
                 Ok(None) => println!("no such workspace: {target}"),
                 Err(e) => eprintln!("failed to remove workspace: {e}"),
@@ -365,7 +365,7 @@ fn main() -> anyhow::Result<()> {
             println!(
                 "par {} (core {})",
                 env!("CARGO_PKG_VERSION"),
-                par_core::version()
+                belljar_core::version()
             );
         }
         Commands::Wizard => {
@@ -406,6 +406,8 @@ fn run_wizard() -> anyhow::Result<()> {
     let ai = prompt_ai()?;
 
     let cwd = std::env::current_dir()?;
+    // For now, write scaffolded Dockerfiles at the project root to match expectations
+    // in our CLI tests. Users can move them under .belljar/compose later if desired.
     println!("\nScaffolding in {}", cwd.display());
 
     // Language-specific Dockerfile for development
@@ -426,8 +428,8 @@ fn run_wizard() -> anyhow::Result<()> {
     write_with_prompt(&cwd.join(ai_filename), ai_contents.as_bytes())?;
 
     println!("\nDone. Generated:");
-    println!("  - {lang_filename}");
-    println!("  - {ai_filename}");
+    println!("  - {}", cwd.join(lang_filename).display());
+    println!("  - {}", cwd.join(ai_filename).display());
     println!(
         "\nTip: add compose files under .belljar/compose/ to wire these into belljar sessions."
     );
@@ -568,20 +570,18 @@ CMD ["bash"]
 }
 
 fn ai_codex_dockerfile_template() -> String {
+    // Codex helper container: installs @openai/codex and open-codex via npm on top of the dev image
     let t = r#"# syntax=docker/dockerfile:1.4
-# Helper container for using OpenAI Codex-like workflows
+# Helper container for using OpenAI Codex workflows (Node)
 FROM dockerfile:Dockerfile.dev
 
 WORKDIR /workspace
 
-ENV PIP_NO_CACHE_DIR=1
-
+# Install Node.js, npm, and the OpenAI Codex SDK plus open-codex
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends python3 python3-pip git curl \
+    && apt-get install -y --no-install-recommends nodejs npm \
+    && npm install -g @openai/codex open-codex \
     && rm -rf /var/lib/apt/lists/*
-
-# Libraries commonly used to interface with OpenAI APIs
-RUN pip install --no-cache-dir openai tiktoken
 
 # Set your credentials at runtime or via compose env_file
 # ENV OPENAI_API_KEY=...
