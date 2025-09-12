@@ -32,3 +32,29 @@ Notes
 - If tmux is not installed, open prints a fallback path; send will fail gracefully.
 - Worktrees are stored under `.belljar/worktrees/` and are ignored by git.
 - Workspaces are recorded in the registry and open a dedicated tmux session (named `ws-<label>`).
+
+## Tmux Integration (Popup + Quick Focus)
+
+Bind a popup to create/focus a belljar session and jump to it with `Ctrl-b j`.
+
+- Minimal prompt (uses tmux's command-prompt):
+
+```tmux
+# ~/.tmux.conf
+bind-key j command-prompt -p "New belljar session:" \
+  "run-shell 'belljar new %1 --path #{pane_current_path}'; switch-client -t %1"
+```
+
+- Popup window with inline prompt and log output:
+
+```tmux
+# ~/.tmux.conf
+bind-key j display-popup -E "sh -lc 'read -p \"New belljar session (base: main): \" name; \\
+  [ -z \"$name\" ] || belljar new \"$name\" --path #{pane_current_path} 2>&1 | sed -u \"s/^/[belljar] /\"; \\
+  [ -z \"$name\" ] || tmux switch-client -t \"$name\"'"
+```
+
+Notes
+- Inside tmux, `belljar new` switches the client to the session; outside tmux it attaches.
+- Change the base branch with `--from <branch>` if you don't want `main`.
+- Reload config: `tmux source-file ~/.tmux.conf`.
