@@ -213,6 +213,48 @@ pub mod git {
         Ok(wt_dir)
     }
 
+    /// Create a worktree with a new branch based on a specific base ref.
+    ///
+    /// If the new branch already exists, this falls back to adding a worktree
+    /// checking out that branch without creating it.
+    pub fn ensure_worktree_from(
+        repo: &Path,
+        label: &str,
+        new_branch: &str,
+        base: &str,
+    ) -> Result<PathBuf, CoreError> {
+        let wt_dir = repo.join(".belljar").join("worktrees").join(label);
+        if let Some(parent) = wt_dir.parent() {
+            fs::create_dir_all(parent)?;
+        }
+
+        let run = |args: &[&str]| -> Result<bool, CoreError> {
+            let st = Command::new(git())
+                .args(["-C"])
+                .arg(repo)
+                .args(args)
+                .status()
+                .map_err(|e| CoreError::Compose(format!("git failed: {e}")))?;
+            Ok(st.success())
+        };
+
+        let ok = run(&[
+            "worktree",
+            "add",
+            "-b",
+            new_branch,
+            wt_dir.to_str().unwrap(),
+            base,
+        ])
+        .unwrap_or(false)
+            || run(&["worktree", "add", wt_dir.to_str().unwrap(), new_branch]).unwrap_or(false);
+
+        if !ok && !wt_dir.exists() {
+            return Err(CoreError::Compose("git worktree add failed".into()));
+        }
+        Ok(wt_dir)
+    }
+
     pub fn set_session_worktree(session: &mut Session, path: PathBuf) -> Result<(), CoreError> {
         session.worktree_path = Some(path);
         // Persist the change
@@ -504,6 +546,18 @@ pub mod tmux {
             .map_err(|e| CoreError::Tmux(e.to_string()))?;
         if !status.success() {
             return Err(CoreError::Tmux("failed to tag session".into()));
+        }
+        Ok(())
+    }
+
+    pub fn switch_client(name: &str) -> Result<(), CoreError> {
+        let tmux = tmux_bin()?;
+        let status = Command::new(tmux)
+            .args(["switch-client", "-t", name])
+            .status()
+            .map_err(|e| CoreError::Tmux(e.to_string()))?;
+        if !status.success() {
+            return Err(CoreError::Tmux("failed to switch client".into()));
         }
         Ok(())
     }
