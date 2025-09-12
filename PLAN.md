@@ -77,7 +77,7 @@ Deliverables:
 3. Documentation:
    - Quickstart, config reference, examples with popular stacks. [IN PROGRESS]
    - How isolation works; performance tips; cleanup commands. [PENDING]
-4. Interactive scaffolding: `belljar wizard` prompts for language (Rust/Python) and AI coder (Codex/Claude/Goose/Aider), generating `Dockerfile` and `Dockerfile.ai` with safe overwrite prompts. [DONE]
+4. Interactive scaffolding: `belljar wizard` prompts for language (Rust/Python) and AI coder (Codex/Claude/Goose/Aider), generating `Dockerfile.dev` and `Dockerfile.ai` (which now references the dev Dockerfile via BuildKit) with safe overwrite prompts. [DONE]
 
 Deliverables:
 - `README.md` and `docs/` with examples and troubleshooting.

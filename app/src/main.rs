@@ -408,13 +408,13 @@ fn run_wizard() -> anyhow::Result<()> {
     let cwd = std::env::current_dir()?;
     println!("\nScaffolding in {}", cwd.display());
 
-    // Language-specific Dockerfile
+    // Language-specific Dockerfile for development
     let (lang_filename, lang_contents) = match lang {
-        Language::Rust => ("Dockerfile", rust_dockerfile_template()),
-        Language::Python => ("Dockerfile", python_dockerfile_template()),
+        Language::Rust => ("Dockerfile.dev", rust_dockerfile_template()),
+        Language::Python => ("Dockerfile.dev", python_dockerfile_template()),
     };
 
-    // AI helper Dockerfile
+    // AI helper Dockerfile layered on top of the dev image
     let (ai_filename, ai_contents) = match ai {
         AiCoder::Codex => ("Dockerfile.ai", ai_codex_dockerfile_template()),
         AiCoder::Claude => ("Dockerfile.ai", ai_claude_dockerfile_template()),
@@ -568,15 +568,16 @@ CMD ["bash"]
 }
 
 fn ai_codex_dockerfile_template() -> String {
-    let t = r#"# Helper container for using OpenAI Codex-like workflows
-FROM python:3.11-slim
+    let t = r#"# syntax=docker/dockerfile:1.4
+# Helper container for using OpenAI Codex-like workflows
+FROM dockerfile:Dockerfile.dev
 
 WORKDIR /workspace
 
 ENV PIP_NO_CACHE_DIR=1
 
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends git curl \
+    && apt-get install -y --no-install-recommends python3 python3-pip git curl \
     && rm -rf /var/lib/apt/lists/*
 
 # Libraries commonly used to interface with OpenAI APIs
@@ -591,15 +592,16 @@ CMD ["bash"]
 }
 
 fn ai_claude_dockerfile_template() -> String {
-    let t = r#"# Helper container for using Claude (Anthropic) workflows
-FROM python:3.11-slim
+    let t = r#"# syntax=docker/dockerfile:1.4
+# Helper container for using Claude (Anthropic) workflows
+FROM dockerfile:Dockerfile.dev
 
 WORKDIR /workspace
 
 ENV PIP_NO_CACHE_DIR=1
 
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends git curl \
+    && apt-get install -y --no-install-recommends python3 python3-pip git curl \
     && rm -rf /var/lib/apt/lists/*
 
 RUN pip install --no-cache-dir anthropic
@@ -613,15 +615,16 @@ CMD ["bash"]
 }
 
 fn ai_goose_dockerfile_template() -> String {
-    let t = r#"# Helper container for using Goose workflows
-FROM python:3.11-slim
+    let t = r#"# syntax=docker/dockerfile:1.4
+# Helper container for using Goose workflows
+FROM dockerfile:Dockerfile.dev
 
 WORKDIR /workspace
 
 ENV PIP_NO_CACHE_DIR=1
 
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends git curl \
+    && apt-get install -y --no-install-recommends python3 python3-pip git curl \
     && rm -rf /var/lib/apt/lists/*
 
 # There are multiple 'goose' projects; adjust as needed
@@ -637,15 +640,16 @@ CMD ["bash"]
 }
 
 fn ai_aider_dockerfile_template() -> String {
-    let t = r#"# Helper container for using Aider (CLI AI pair programmer)
-FROM python:3.11-slim
+    let t = r#"# syntax=docker/dockerfile:1.4
+# Helper container for using Aider (CLI AI pair programmer)
+FROM dockerfile:Dockerfile.dev
 
 WORKDIR /workspace
 
 ENV PIP_NO_CACHE_DIR=1
 
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends git curl \
+    && apt-get install -y --no-install-recommends python3 python3-pip git curl \
     && rm -rf /var/lib/apt/lists/*
 
 RUN pip install --no-cache-dir aider-chat

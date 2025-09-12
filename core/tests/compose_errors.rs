@@ -1,6 +1,9 @@
 use std::fs;
 use std::os::unix::fs::PermissionsExt;
+use std::sync::{Mutex, OnceLock};
 use tempfile::TempDir;
+
+static PATH_LOCK: OnceLock<Mutex<()>> = OnceLock::new();
 
 fn prepend_path(dir: &std::path::Path) -> String {
     let old = std::env::var("PATH").unwrap_or_default();
@@ -9,6 +12,14 @@ fn prepend_path(dir: &std::path::Path) -> String {
 
 #[test]
 fn compose_up_error() {
+    if std::env::var("DOCKER_TESTS").is_err() {
+        eprintln!("skipping compose_up_error: DOCKER_TESTS unset");
+        return;
+    }
+
+    let _guard = PATH_LOCK.get_or_init(|| Mutex::new(())).lock().unwrap();
+    let orig_path = std::env::var("PATH").unwrap_or_default();
+
     let data = TempDir::new().unwrap();
     par_core::set_data_dir_override_for_testing(data.path());
     let repo = TempDir::new().unwrap();
@@ -19,6 +30,9 @@ fn compose_up_error() {
     )
     .unwrap();
 
+    // create session with real docker
+    let s = par_core::create_session("t", repo.path(), None, vec![]).unwrap();
+
     // docker shim fails
     let shim_dir = TempDir::new().unwrap();
     let shim = shim_dir.path().join("docker");
@@ -28,15 +42,24 @@ fn compose_up_error() {
     fs::set_permissions(&shim, perm).unwrap();
     std::env::set_var("PATH", prepend_path(shim_dir.path()));
 
-    let s = par_core::create_session("t", repo.path(), None, vec![]).unwrap();
     match par_core::compose::up(&s) {
         Err(par_core::CoreError::Compose(_)) => {}
         _ => panic!("expected compose error"),
     }
+
+    std::env::set_var("PATH", orig_path);
 }
 
 #[test]
 fn compose_down_error() {
+    if std::env::var("DOCKER_TESTS").is_err() {
+        eprintln!("skipping compose_down_error: DOCKER_TESTS unset");
+        return;
+    }
+
+    let _guard = PATH_LOCK.get_or_init(|| Mutex::new(())).lock().unwrap();
+    let orig_path = std::env::var("PATH").unwrap_or_default();
+
     let data = TempDir::new().unwrap();
     par_core::set_data_dir_override_for_testing(data.path());
     let repo = TempDir::new().unwrap();
@@ -47,6 +70,9 @@ fn compose_down_error() {
     )
     .unwrap();
 
+    // create session with real docker
+    let s = par_core::create_session("t", repo.path(), None, vec![]).unwrap();
+
     // docker shim fails
     let shim_dir = TempDir::new().unwrap();
     let shim = shim_dir.path().join("docker");
@@ -56,9 +82,10 @@ fn compose_down_error() {
     fs::set_permissions(&shim, perm).unwrap();
     std::env::set_var("PATH", prepend_path(shim_dir.path()));
 
-    let s = par_core::create_session("t", repo.path(), None, vec![]).unwrap();
     match par_core::compose::down(&s) {
         Err(par_core::CoreError::Compose(_)) => {}
         _ => panic!("expected compose error"),
     }
+
+    std::env::set_var("PATH", orig_path);
 }
