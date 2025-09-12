@@ -80,7 +80,7 @@ fn data_dir() -> Result<PathBuf, CoreError> {
         fs::create_dir_all(&p)?;
         return Ok(p);
     }
-    let dirs = ProjectDirs::from("dev", "par-rs", "par-rs").ok_or(CoreError::NoRegistryPath)?;
+    let dirs = ProjectDirs::from("dev", "belljar", "belljar").ok_or(CoreError::NoRegistryPath)?;
     let dir = dirs.data_dir().to_path_buf();
     fs::create_dir_all(&dir)?;
     Ok(dir)
@@ -128,7 +128,7 @@ pub fn create_session(
 ) -> Result<Session, CoreError> {
     let mut reg = load_registry()?;
     let id = Uuid::new_v4().to_string();
-    let compose_project = format!("parrs_{}", &id[..8]);
+    let compose_project = format!("belljar_{}", &id[..8]);
     let tmux_session = label.to_string();
     let created_at = OffsetDateTime::now_utc()
         .format(&time::format_description::well_known::Rfc3339)

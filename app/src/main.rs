@@ -131,8 +131,9 @@ fn main() -> anyhow::Result<()> {
         } => {
             let repo = resolve_repo_path(path.as_deref())?;
             let label = label.unwrap_or_else(|| target.clone());
-            let mut session = belljar_core::create_session(&label, &repo, Some(target.clone()), vec![])
-                .map_err(|e| anyhow::anyhow!("create session failed: {e}"))?;
+            let mut session =
+                belljar_core::create_session(&label, &repo, Some(target.clone()), vec![])
+                    .map_err(|e| anyhow::anyhow!("create session failed: {e}"))?;
             if belljar_core::git::is_git_repo(&repo) {
                 match belljar_core::git::ensure_worktree(&repo, &label, &Some(target.clone())) {
                     Ok(wt) => {
@@ -233,7 +234,8 @@ fn main() -> anyhow::Result<()> {
                         for s in reg.sessions {
                             match belljar_core::tmux::ensure_session(&s) {
                                 Ok(()) => {
-                                    if let Err(e) = belljar_core::tmux::send_keys(&s.tmux_session, &cmd)
+                                    if let Err(e) =
+                                        belljar_core::tmux::send_keys(&s.tmux_session, &cmd)
                                     {
                                         eprintln!("send to {} failed: {e}", s.label);
                                     }
@@ -273,9 +275,11 @@ fn main() -> anyhow::Result<()> {
                             Ok(()) => {
                                 for s in reg.sessions {
                                     // Try to create a window per session label
-                                    if let Err(e) =
-                                        belljar_core::tmux::new_window(cc_name, &s.label, &s.repo_path)
-                                    {
+                                    if let Err(e) = belljar_core::tmux::new_window(
+                                        cc_name,
+                                        &s.label,
+                                        &s.repo_path,
+                                    ) {
                                         eprintln!("failed to create window for {}: {e}", s.label);
                                     }
                                 }
@@ -343,7 +347,9 @@ fn main() -> anyhow::Result<()> {
                             .file_name()
                             .map(|s| s.to_string_lossy().to_string())
                             .unwrap_or_else(|| repo.display().to_string());
-                        if let Err(e) = belljar_core::tmux::new_window(&ws.tmux_session, &name, repo) {
+                        if let Err(e) =
+                            belljar_core::tmux::new_window(&ws.tmux_session, &name, repo)
+                        {
                             eprintln!("failed to create window for {name}: {e}");
                         }
                     }
@@ -363,7 +369,7 @@ fn main() -> anyhow::Result<()> {
         },
         Commands::Version => {
             println!(
-                "par {} (core {})",
+                "belljar {} (core {})",
                 env!("CARGO_PKG_VERSION"),
                 belljar_core::version()
             );
@@ -406,8 +412,6 @@ fn run_wizard() -> anyhow::Result<()> {
     let ai = prompt_ai()?;
 
     let cwd = std::env::current_dir()?;
-    // For now, write scaffolded Dockerfiles at the project root to match expectations
-    // in our CLI tests. Users can move them under .belljar/compose later if desired.
     println!("\nScaffolding in {}", cwd.display());
 
     // Language-specific Dockerfile for development

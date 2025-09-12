@@ -83,7 +83,7 @@ Deliverables:
 - `README.md` and `docs/` with examples and troubleshooting.
 
 ## Implementation Notes
-- Compose project isolation: always pass `-p parrs_<shortid>` and set `COMPOSE_PROJECT_NAME`.
+- Compose project isolation: always pass `-p belljar_<shortid>` and set `COMPOSE_PROJECT_NAME`.
 - Resource limits: expose `--cpus/--memory` per service via compose overrides.
 - Security: avoid mounting host docker.sock into containers; long-running services live only within the session project.
 - Extensibility: service templates as modular YAML snippets in `assets/compose/`.
