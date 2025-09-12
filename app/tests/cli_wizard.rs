@@ -27,7 +27,8 @@ fn wizard_creates_dockerfiles_rust_codex() {
     let df_s = fs::read_to_string(&df).unwrap();
     let ai_s = fs::read_to_string(&ai).unwrap();
     assert!(df_s.contains("FROM rust:"));
-    assert!(ai_s.contains("FROM belljar-dev"));
+    assert!(ai_s.contains("# syntax=docker/dockerfile:1.4"));
+    assert!(ai_s.contains("FROM dockerfile:Dockerfile.dev"));
     assert!(ai_s.to_lowercase().contains("openai"));
 }
 
@@ -54,7 +55,8 @@ fn wizard_creates_dockerfiles_python_aider() {
     let df_s = fs::read_to_string(&df).unwrap();
     let ai_s = fs::read_to_string(&ai).unwrap();
     assert!(df_s.contains("FROM python:3.11"));
-    assert!(ai_s.contains("FROM belljar-dev"));
+    assert!(ai_s.contains("# syntax=docker/dockerfile:1.4"));
+    assert!(ai_s.contains("FROM dockerfile:Dockerfile.dev"));
     assert!(ai_s.to_lowercase().contains("aider"));
 }
 
@@ -102,6 +104,7 @@ fn wizard_respects_overwrite_prompt() {
     let df_s = fs::read_to_string(td.path().join("Dockerfile.dev")).unwrap();
     let ai_s = fs::read_to_string(td.path().join("Dockerfile.ai")).unwrap();
     assert!(df_s.contains("FROM rust:"));
-    assert!(ai_s.contains("FROM belljar-dev"));
+    assert!(ai_s.contains("# syntax=docker/dockerfile:1.4"));
+    assert!(ai_s.contains("FROM dockerfile:Dockerfile.dev"));
     assert!(ai_s.to_lowercase().contains("openai"));
 }

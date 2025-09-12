@@ -568,9 +568,9 @@ CMD ["bash"]
 }
 
 fn ai_codex_dockerfile_template() -> String {
-    let t = r#"# Helper container for using OpenAI Codex-like workflows
-# Build the dev image first: docker build -f Dockerfile.dev -t belljar-dev .
-FROM belljar-dev
+    let t = r#"# syntax=docker/dockerfile:1.4
+# Helper container for using OpenAI Codex-like workflows
+FROM dockerfile:Dockerfile.dev
 
 WORKDIR /workspace
 
@@ -592,9 +592,9 @@ CMD ["bash"]
 }
 
 fn ai_claude_dockerfile_template() -> String {
-    let t = r#"# Helper container for using Claude (Anthropic) workflows
-# Build the dev image first: docker build -f Dockerfile.dev -t belljar-dev .
-FROM belljar-dev
+    let t = r#"# syntax=docker/dockerfile:1.4
+# Helper container for using Claude (Anthropic) workflows
+FROM dockerfile:Dockerfile.dev
 
 WORKDIR /workspace
 
@@ -615,9 +615,9 @@ CMD ["bash"]
 }
 
 fn ai_goose_dockerfile_template() -> String {
-    let t = r#"# Helper container for using Goose workflows
-# Build the dev image first: docker build -f Dockerfile.dev -t belljar-dev .
-FROM belljar-dev
+    let t = r#"# syntax=docker/dockerfile:1.4
+# Helper container for using Goose workflows
+FROM dockerfile:Dockerfile.dev
 
 WORKDIR /workspace
 
@@ -640,9 +640,9 @@ CMD ["bash"]
 }
 
 fn ai_aider_dockerfile_template() -> String {
-    let t = r#"# Helper container for using Aider (CLI AI pair programmer)
-# Build the dev image first: docker build -f Dockerfile.dev -t belljar-dev .
-FROM belljar-dev
+    let t = r#"# syntax=docker/dockerfile:1.4
+# Helper container for using Aider (CLI AI pair programmer)
+FROM dockerfile:Dockerfile.dev
 
 WORKDIR /workspace
 
