@@ -46,4 +46,5 @@ fn tmux_helpers_call_binary() {
     assert!(logged.contains("new-window"));
     assert!(logged.contains("select-layout"));
     assert!(logged.contains("attach-session"));
+    assert!(logged.contains("set-option"));
 }

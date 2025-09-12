@@ -441,6 +441,8 @@ pub mod tmux {
         if !has_session(&session.tmux_session)? {
             new_detached(&session.tmux_session, &session.repo_path)?;
         }
+        // Best-effort tagging so users can style/status belljar sessions in tmux.
+        let _ = tag_belljar_session(&session.tmux_session);
         Ok(())
     }
 
@@ -464,6 +466,8 @@ pub mod tmux {
         if !has_session(name)? {
             new_detached(name, cwd)?;
         }
+        // Best-effort tagging so users can style/status belljar sessions in tmux.
+        let _ = tag_belljar_session(name);
         Ok(())
     }
 
@@ -488,6 +492,18 @@ pub mod tmux {
             .map_err(|e| CoreError::Tmux(e.to_string()))?;
         if !status.success() {
             return Err(CoreError::Tmux("failed to select layout".into()));
+        }
+        Ok(())
+    }
+
+    fn tag_belljar_session(name: &str) -> Result<(), CoreError> {
+        let tmux = tmux_bin()?;
+        let status = Command::new(tmux)
+            .args(["set-option", "-t", name, "@belljar", "1"])
+            .status()
+            .map_err(|e| CoreError::Tmux(e.to_string()))?;
+        if !status.success() {
+            return Err(CoreError::Tmux("failed to tag session".into()));
         }
         Ok(())
     }
