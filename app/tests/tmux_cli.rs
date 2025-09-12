@@ -103,6 +103,7 @@ fn open_and_send_use_tmux() {
 
     let logged = fs::read_to_string(&log).unwrap();
     assert!(logged.contains("attach-session"));
+    assert!(logged.contains("set-option"));
     assert!(logged.contains("send-keys"));
 }
 
@@ -136,6 +137,7 @@ fn control_center_creates_windows() {
     assert!(logged.contains("new-window"));
     assert!(logged.contains("select-layout"));
     assert!(logged.contains("attach-session"));
+    assert!(logged.contains("set-option"));
 }
 
 #[test]
