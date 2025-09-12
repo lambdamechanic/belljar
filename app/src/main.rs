@@ -19,6 +19,16 @@ struct Cli {
 enum Commands {
     /// Create a new session with a worktree and optional services
     Start(StartArgs),
+    /// Create a new branch from a base (default: main) and open session
+    New {
+        label: String,
+        /// Base branch to create from (default: main)
+        #[arg(short = 'f', long = "from")]
+        from: Option<String>,
+        /// Path to git repository
+        #[arg(short, long)]
+        path: Option<PathBuf>,
+    },
     /// Checkout an existing branch/PR into a session
     Checkout {
         target: String,
@@ -122,6 +132,87 @@ fn main() -> anyhow::Result<()> {
                         session.label, session.compose_project
                     );
                 }
+            }
+        }
+        Commands::New { label, from, path } => {
+            let repo = resolve_repo_path(path.as_deref())?;
+            // If session already exists, just focus it
+            if let Ok(Some(s)) = belljar_core::find_session(&label) {
+                // Ensure tmux session and focus appropriately
+                match belljar_core::tmux::ensure_session(&s) {
+                    Ok(()) => {
+                        if std::env::var("TMUX").is_ok() {
+                            if let Err(e) = belljar_core::tmux::switch_client(&s.tmux_session) {
+                                eprintln!("failed to focus session: {e}");
+                            }
+                        } else if let Err(e) = belljar_core::tmux::attach(&s.tmux_session) {
+                            match e {
+                                belljar_core::CoreError::TmuxNotFound => println!(
+                                    "tmux not found; cd {} to work in this session",
+                                    s.repo_path.display()
+                                ),
+                                other => eprintln!("failed to attach: {other}"),
+                            }
+                        }
+                    }
+                    Err(belljar_core::CoreError::TmuxNotFound) => println!(
+                        "tmux not found; cd {} to work in this session",
+                        s.repo_path.display()
+                    ),
+                    Err(e) => eprintln!("failed to open session: {e}"),
+                }
+                return Ok(());
+            }
+
+            if !belljar_core::git::is_git_repo(&repo) {
+                anyhow::bail!("not a git repository: {}", repo.display());
+            }
+            let base = from.unwrap_or_else(|| "main".to_string());
+            let mut session =
+                belljar_core::create_session(&label, &repo, Some(label.clone()), vec![])
+                    .map_err(|e| anyhow::anyhow!("create session failed: {e}"))?;
+
+            match belljar_core::git::ensure_worktree_from(&repo, &label, &label, &base) {
+                Ok(wt) => {
+                    belljar_core::git::set_session_worktree(&mut session, wt).ok();
+                }
+                Err(e) => eprintln!("warning: worktree setup failed: {e}"),
+            }
+
+            match belljar_core::compose::up(&session) {
+                Ok(()) => println!(
+                    "created session: {} from {} (project: {}) [compose up]",
+                    session.label, base, session.compose_project
+                ),
+                Err(belljar_core::CoreError::NoComposeFiles) => println!(
+                    "created session: {} from {} (project: {}); no compose files found, skipping",
+                    session.label, base, session.compose_project
+                ),
+                Err(e) => eprintln!("warning: compose up failed: {e}"),
+            }
+
+            // Focus in tmux
+            match belljar_core::tmux::ensure_session(&session) {
+                Ok(()) => {
+                    if std::env::var("TMUX").is_ok() {
+                        if let Err(e) = belljar_core::tmux::switch_client(&session.tmux_session) {
+                            eprintln!("failed to focus session: {e}");
+                        }
+                    } else if let Err(e) = belljar_core::tmux::attach(&session.tmux_session) {
+                        match e {
+                            belljar_core::CoreError::TmuxNotFound => println!(
+                                "tmux not found; cd {} to work in this session",
+                                session.repo_path.display()
+                            ),
+                            other => eprintln!("failed to attach: {other}"),
+                        }
+                    }
+                }
+                Err(belljar_core::CoreError::TmuxNotFound) => println!(
+                    "tmux not found; cd {} to work in this session",
+                    session.repo_path.display()
+                ),
+                Err(e) => eprintln!("failed to open session: {e}"),
             }
         }
         Commands::Checkout {
