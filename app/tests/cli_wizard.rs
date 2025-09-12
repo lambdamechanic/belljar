@@ -19,14 +19,15 @@ fn wizard_creates_dockerfiles_rust_codex() {
     let out = child.wait_with_output().unwrap();
     assert!(out.status.success());
 
-    let df = td.path().join("Dockerfile");
+    let df = td.path().join("Dockerfile.dev");
     let ai = td.path().join("Dockerfile.ai");
-    assert!(df.exists(), "Dockerfile should be created");
+    assert!(df.exists(), "Dockerfile.dev should be created");
     assert!(ai.exists(), "Dockerfile.ai should be created");
 
     let df_s = fs::read_to_string(&df).unwrap();
     let ai_s = fs::read_to_string(&ai).unwrap();
     assert!(df_s.contains("FROM rust:"));
+    assert!(ai_s.contains("FROM belljar-dev"));
     assert!(ai_s.to_lowercase().contains("openai"));
 }
 
@@ -46,13 +47,14 @@ fn wizard_creates_dockerfiles_python_aider() {
     let out = child.wait_with_output().unwrap();
     assert!(out.status.success());
 
-    let df = td.path().join("Dockerfile");
+    let df = td.path().join("Dockerfile.dev");
     let ai = td.path().join("Dockerfile.ai");
     assert!(df.exists());
     assert!(ai.exists());
     let df_s = fs::read_to_string(&df).unwrap();
     let ai_s = fs::read_to_string(&ai).unwrap();
     assert!(df_s.contains("FROM python:3.11"));
+    assert!(ai_s.contains("FROM belljar-dev"));
     assert!(ai_s.to_lowercase().contains("aider"));
 }
 
@@ -97,8 +99,9 @@ fn wizard_respects_overwrite_prompt() {
     assert!(printed.contains("Skipped"));
 
     // Content remains from Rust/Codex
-    let df_s = fs::read_to_string(td.path().join("Dockerfile")).unwrap();
+    let df_s = fs::read_to_string(td.path().join("Dockerfile.dev")).unwrap();
     let ai_s = fs::read_to_string(td.path().join("Dockerfile.ai")).unwrap();
     assert!(df_s.contains("FROM rust:"));
+    assert!(ai_s.contains("FROM belljar-dev"));
     assert!(ai_s.to_lowercase().contains("openai"));
 }
